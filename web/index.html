@@ -3441,7 +3441,7 @@ function initTimeline(j, c) {
     updateVisuals(start);
 
     if (seekVideo) {
-      switchToReview(start, true);
+      switchToReview(start, false);
     }
   }
 
@@ -3471,6 +3471,8 @@ function initTimeline(j, c) {
       } else {
         setSpeed(currentSpeed);
       }
+    } else {
+      stageVideo.pause();
     }
   }
 
@@ -3530,6 +3532,7 @@ function initTimeline(j, c) {
     startX = e.clientX;
     initStart = start;
     initEnd = end;
+    if (stageVideo) stageVideo.pause();
     initSegments = segments.map(s => ({ ...s }));
     if (e.target.setPointerCapture) {
       try { e.target.setPointerCapture(e.pointerId); } catch {}
@@ -3551,6 +3554,7 @@ function initTimeline(j, c) {
       if (stageVideo) {
         if (!isReview) switchToReview(start, false);
         stageVideo.currentTime = start;
+        stageVideo.pause();
       }
     } else if (dragType === "right") {
       let ne = Math.min(maxTime, Math.max(initStart + 3, initEnd + dt));
@@ -3559,6 +3563,7 @@ function initTimeline(j, c) {
       if (stageVideo) {
         if (!isReview) switchToReview(end, false);
         stageVideo.currentTime = end;
+        stageVideo.pause();
       }
     } else if (dragType === "pointer") {
       const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
@@ -3567,6 +3572,7 @@ function initTimeline(j, c) {
       if (stageVideo) {
         if (!isReview) switchToReview(pointerTime, false);
         stageVideo.currentTime = pointerTime;
+        stageVideo.pause();
       }
       updateVisuals(pointerTime);
     }
@@ -3586,15 +3592,10 @@ function initTimeline(j, c) {
       if (e.target && e.target.releasePointerCapture) {
         try { e.target.releasePointerCapture(e.pointerId); } catch {}
       }
-      const prevType = dragType;
       dragType = null;
-      if (prevType === "pointer") {
-        if (stageVideo && isReview) {
-          stageVideo.currentTime = pointerTime;
-        }
-      } else if (isReview && stageVideo) {
-        stageVideo.currentTime = start;
-        stageVideo.play().catch(() => {});
+      if (stageVideo && isReview) {
+        stageVideo.currentTime = pointerTime;
+        stageVideo.pause();
       }
     }
   }
@@ -3627,7 +3628,8 @@ function initTimeline(j, c) {
     const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
     const clickTime = Math.round(fromPct(clickPct) * 100) / 100;
     pointerTime = Math.max(minTime, Math.min(maxTime, clickTime));
-    switchToReview(pointerTime, true);
+    switchToReview(pointerTime, false);
+    if (stageVideo) stageVideo.pause();
   });
 
   if (clipsTrack) {
@@ -3648,21 +3650,29 @@ function initTimeline(j, c) {
   box.querySelectorAll("[data-step-s]").forEach(btn => {
     btn.onclick = () => {
       const step = Number(btn.dataset.stepS);
-      setTimes(start + step, end, true);
+      setTimes(start + step, end, false);
+      if (stageVideo) stageVideo.pause();
     };
   });
   box.querySelectorAll("[data-step-e]").forEach(btn => {
     btn.onclick = () => {
       const step = Number(btn.dataset.stepE);
-      setTimes(start, end + step, true);
+      setTimes(start, end + step, false);
+      if (stageVideo) stageVideo.pause();
     };
   });
 
   if (inStart) {
-    inStart.onchange = () => setTimes(Number(inStart.value), end, true);
+    inStart.onchange = () => {
+      setTimes(Number(inStart.value), end, false);
+      if (stageVideo) stageVideo.pause();
+    };
   }
   if (inEnd) {
-    inEnd.onchange = () => setTimes(start, Number(inEnd.value), true);
+    inEnd.onchange = () => {
+      setTimes(start, Number(inEnd.value), false);
+      if (stageVideo) stageVideo.pause();
+    };
   }
 
   if (needleSplitBtn) {
