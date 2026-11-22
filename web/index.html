@@ -721,9 +721,6 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .tl-pointer-cap{position:absolute;top:0;left:0;transform:translateX(-50%);width:26px;height:22px;cursor:ew-resize;pointer-events:auto;display:flex;flex-direction:column;align-items:center;z-index:16}
 .tl-needle-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:3px;background:#0F172A;color:#FFFFFF;font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,0.25)}
 .tl-needle-shape{width:14px;height:15px;background:#2563EB;clip-path:polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%)}
-.tl-needle-split-btn{position:absolute;top:22px;left:7px;background:#2563EB;color:#FFFFFF;border:1.5px solid #FFFFFF;border-radius:999px;font-size:10px;font-weight:700;padding:2px 7px;box-shadow:0 2px 6px rgba(0,0,0,0.25);cursor:pointer;white-space:nowrap;pointer-events:auto;display:inline-flex;align-items:center;gap:3px;z-index:25;transition:transform .1s,background .12s}
-.tl-needle-split-btn:hover{background:#1D4ED8;transform:scale(1.05)}
-.tl-needle-split-btn:active{transform:scale(0.96)}
 
 /* Progress Bar */
 .tl-progress-bar{position:relative;height:3px;background:#E2E8F0;border-radius:2px;overflow:hidden}
@@ -3013,10 +3010,9 @@ function drawClipDlg(full) {
                   <!-- The Draggable Split Pointer Line -->
                   <div class="tl-pointer" id="tl_pointer">
                     <div class="tl-pointer-line"></div>
-                    <div class="tl-pointer-cap" id="tl_pointer_cap" title="Drag to scrub / position split line">
+                    <div class="tl-pointer-cap" id="tl_pointer_cap" title="Drag to scrub / seek video">
                       <div class="tl-needle-badge" id="tl_needle_badge">0:00</div>
                       <div class="tl-needle-shape"></div>
-                      <button type="button" class="tl-needle-split-btn" id="tl_needle_split_btn" title="Split at this line">✂ Split</button>
                     </div>
                   </div>
                 </div>
@@ -3104,7 +3100,6 @@ function initTimeline(j, c) {
   const pointer = $("#tl_pointer");
   const pointerCap = $("#tl_pointer_cap");
   const needleBadge = $("#tl_needle_badge");
-  const needleSplitBtn = $("#tl_needle_split_btn");
   const progFill = $("#tl_prog");
   const dimL = $("#tl_dim_l");
   const dimR = $("#tl_dim_r");
@@ -3522,7 +3517,6 @@ function initTimeline(j, c) {
     pointerTime = ct;
     if (splitTLbl) splitTLbl.textContent = fmt(ct);
     if (needleBadge) needleBadge.textContent = fmt(ct);
-    if (needleSplitBtn) needleSplitBtn.title = "Split at " + fmt(ct);
     if (splitBtn) splitBtn.title = "Split clip at " + fmt(ct);
     syncPlayBtn();
 
@@ -3733,14 +3727,8 @@ function initTimeline(j, c) {
 
   hLeft?.addEventListener("pointerdown", e => onPointerDown(e, "left"));
   hRight?.addEventListener("pointerdown", e => onPointerDown(e, "right"));
-  pointerCap?.addEventListener("pointerdown", e => {
-    if (e.target.closest(".tl-needle-split-btn, #tl_needle_split_btn")) return;
-    onPointerDown(e, "pointer");
-  });
-  pointer?.addEventListener("pointerdown", e => {
-    if (e.target.closest(".tl-needle-split-btn, #tl_needle_split_btn")) return;
-    onPointerDown(e, "pointer");
-  });
+  pointerCap?.addEventListener("pointerdown", e => onPointerDown(e, "pointer"));
+  pointer?.addEventListener("pointerdown", e => onPointerDown(e, "pointer"));
 
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
@@ -3779,7 +3767,7 @@ function initTimeline(j, c) {
   }
 
   track?.addEventListener("click", e => {
-    if (e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res, .tl-needle-split-btn, #tl_needle_split_btn") || dragType) return;
+    if (e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res") || dragType) return;
     const rect = track.getBoundingClientRect();
     const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
     const clickTime = Math.round(fromPct(clickPct) * 100) / 100;
@@ -3832,13 +3820,6 @@ function initTimeline(j, c) {
     };
   }
 
-  if (needleSplitBtn) {
-    needleSplitBtn.onclick = (e) => {
-      e.stopPropagation();
-      const ct = stageVideo ? stageVideo.currentTime : pointerTime;
-      splitAt(ct);
-    };
-  }
   if (splitBtn) {
     splitBtn.onclick = () => {
       const ct = stageVideo ? stageVideo.currentTime : pointerTime;
