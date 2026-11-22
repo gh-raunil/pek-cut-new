@@ -641,94 +641,141 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .editor h3{font-size:13px;font-weight:600;color:var(--dim);margin-top:6px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* ---------- timeline & stage */
-.tl-section{display:flex;flex-direction:column;gap:6px;margin:2px 0 6px}
-.tl-label-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
-.tl-label-row h3{margin:0;font-size:13px;font-weight:600;color:var(--dim)}
-.tl-zoom-ctrls{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--dim)}
-.tl-zoom-ctrls .sub{font-size:11px;color:var(--faint);margin-right:2px}
-.tl-btn-z{min-width:22px;height:22px;padding:0 6px;border-radius:5px;border:1px solid var(--line-2);background:var(--muted);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;display:grid;place-items:center}
-.tl-btn-z:hover{background:var(--line);color:var(--brand-ink)}
-.tl-btn-z.fit{font-size:10px;padding:0 7px;font-weight:700}
-.tl-z-val{min-width:32px;text-align:center;font-size:11px;font-weight:600;color:var(--dim);font-family:monospace}
+/* ---------- timeline & stage (CapCut / Premiere Pro inspired UI/UX) */
+.tl-section{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px;width:100%;box-sizing:border-box}
 
-.tl-container{background:#FFFFFF;border:1px solid var(--line,#e2e8f0);border-radius:12px;padding:12px 14px 10px;display:flex;flex-direction:column;gap:8px;user-select:none;-webkit-user-select:none}
-.tl-header{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim,#666)}
-.tl-header b{color:var(--brand-ink,#18120e);font-family:monospace;font-size:12px}
-.tl-badge{background:var(--muted,#f3f4f6);color:var(--brand-ink,#18120e);font-weight:700;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid var(--line-2,#e5e7eb)}
+/* Main Timeline Container */
+.tl-container{background:#FFFFFF;border:1px solid var(--line,#e2e8f0);border-radius:10px;padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;user-select:none;-webkit-user-select:none;box-sizing:border-box;width:100%}
 
-.tl-track-wrap{position:relative;width:100%;padding:4px 0}
-.tl-viewport{position:relative;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.2) transparent;border-radius:8px;border:1px solid var(--line-2,#e5e7eb);background:#F8F9FA;touch-action:none}
+/* 1. Header Toolbar */
+.tl-header-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line,#e2e8f0)}
+.tl-header-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tl-title{font-size:13px;font-weight:700;color:#0F172A;display:inline-flex;align-items:center;gap:6px;letter-spacing:-0.2px}
+.tl-title svg{width:14px;height:14px;fill:#2563EB}
+.tl-range-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:#F8FAFC;border:1px solid #E2E8F0;font-size:11px;font-family:monospace;color:#475569}
+.tl-range-pill b{color:#0F172A}
+.tl-range-arrow{color:#94A3B8;font-size:10px}
+.tl-dur-badge{background:#2563EB;color:#FFFFFF;font-weight:700;padding:1px 6px;border-radius:999px;font-size:10px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+
+/* Zoom Toolbar */
+.tl-zoom-toolbar{display:flex;align-items:center;gap:3px;font-size:11px}
+.tl-zoom-hint{font-size:10px;color:#94A3B8;margin-right:4px}
+.tl-zoom-btn{min-width:24px;height:24px;padding:0 5px;border-radius:5px;border:1px solid #CBD5E1;background:#FFFFFF;color:#334155;font-size:11px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s,border-color .12s}
+.tl-zoom-btn svg{width:11px;height:11px;fill:currentColor}
+.tl-zoom-btn:hover{background:#F1F5F9;color:#0F172A;border-color:#94A3B8}
+.tl-zoom-btn:active{background:#E2E8F0}
+.tl-zoom-btn.fit{font-size:10px;font-weight:700;padding:0 7px}
+.tl-zoom-val{min-width:38px;text-align:center;font-size:11px;font-weight:700;color:#334155;font-family:monospace}
+
+/* 2. Timeline Visualization */
+.tl-track-wrap{position:relative;width:100%;display:flex;flex-direction:column;gap:5px}
+.tl-viewport{position:relative;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:rgba(100,116,139,0.3) transparent;border-radius:8px;border:1px solid #CBD5E1;background:#F8FAFC;touch-action:none}
 .tl-viewport::-webkit-scrollbar{height:6px}
-.tl-viewport::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.18);border-radius:3px}
-.tl-viewport::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.32)}
+.tl-viewport::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.3);border-radius:3px}
+.tl-viewport::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,0.5)}
 
-.tl-track{position:relative;height:68px;min-width:100%;background:#F8F9FA;cursor:crosshair;touch-action:none}
-.tl-ticks{position:absolute;left:0;right:0;top:0;height:18px;pointer-events:none}
+.tl-track{position:relative;height:74px;min-width:100%;background:#F8FAFC;cursor:crosshair;touch-action:none}
+
+/* Ruler & Ticks */
+.tl-ticks{position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid #E2E8F0;background:#F1F5F9;pointer-events:none}
 .tl-tick-item{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;transform:translateX(-50%);pointer-events:none}
-.tl-tick-line{width:1px;height:6px;background:rgba(0,0,0,0.22)}
-.tl-tick-time{font-size:9px;color:var(--dim,#666);font-family:monospace;line-height:1}
+.tl-tick-line{width:1px;height:6px;background:#94A3B8}
+.tl-tick-time{font-size:9px;font-weight:600;color:#64748B;font-family:monospace;line-height:1.2;padding-top:2px}
 
-.tl-dim{position:absolute;top:18px;bottom:3px;background:rgba(0,0,0,0.07);pointer-events:none;z-index:2}
+/* Dim Inactive Areas */
+.tl-dim{position:absolute;top:20px;bottom:4px;background:rgba(15,23,42,0.06);pointer-events:none;z-index:2}
 .tl-dim.left{left:0}
 .tl-dim.right{right:0}
 
 /* Separated Video Clips Track */
-.tl-clips-track{position:absolute;left:0;right:0;top:18px;bottom:4px;pointer-events:auto;z-index:3}
-.tl-video-card{position:absolute;top:0;bottom:0;border-radius:6px;box-sizing:border-box;pointer-events:auto;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;justify-content:space-between;padding:3px 6px;user-select:none;-webkit-user-select:none}
-.tl-video-card.active{background:#FFFFFF;border:2px solid #2563EB;box-shadow:0 1px 4px rgba(37,99,235,0.2)}
-.tl-video-card.active:hover{border-color:#1D4ED8;box-shadow:0 2px 7px rgba(37,99,235,0.32)}
-.tl-video-card.deleted{background:repeating-linear-gradient(45deg,#FEE2E2,#FEE2E2 6px,#FECACA 6px,#FECACA 12px);border:2px dashed #DC2626;opacity:0.88}
-.tl-vcard-top{display:flex;align-items:center;justify-content:space-between;gap:4px;line-height:1}
+.tl-clips-track{position:absolute;left:0;right:0;top:21px;bottom:5px;pointer-events:auto;z-index:3}
+.tl-video-card{position:absolute;top:0;bottom:0;border-radius:6px;box-sizing:border-box;pointer-events:auto;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;justify-content:space-between;padding:3px 7px;user-select:none;-webkit-user-select:none;overflow:hidden}
+.tl-video-card.active{background:#FFFFFF;border:2px solid #2563EB;box-shadow:0 1px 3px rgba(37,99,235,0.18)}
+.tl-video-card.active:hover{border-color:#1D4ED8;box-shadow:0 2px 6px rgba(37,99,235,0.28)}
+.tl-video-card.deleted{background:repeating-linear-gradient(45deg,#FEF2F2,#FEF2F2 7px,#FEE2E2 7px,#FEE2E2 14px);border:2px dashed #EF4444;opacity:0.92}
+.tl-vcard-top{display:flex;align-items:center;justify-content:space-between;gap:4px;line-height:1.2}
 .tl-vcard-title{font-size:11px;font-weight:700;color:#1E3A8A;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tl-vcard-title.cut{color:#991B1B}
-.tl-vcard-del{border:0;background:rgba(220,38,38,0.14);color:#DC2626;width:18px;height:18px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0;line-height:1}
-.tl-vcard-del:hover{background:#DC2626;color:#FFFFFF}
-.tl-vcard-res{border:0;background:#DC2626;color:#FFFFFF;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;padding:2px 5px;line-height:1}
+.tl-vcard-title.cut{color:#B91C1C}
+.tl-vcard-del{border:1px solid rgba(220,38,38,0.25);background:#FEF2F2;color:#DC2626;width:17px;height:17px;border-radius:3px;cursor:pointer;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1;flex-shrink:0;transition:all .12s}
+.tl-vcard-del:hover{background:#DC2626;color:#FFFFFF;border-color:#DC2626}
+.tl-vcard-res{border:1px solid #DC2626;background:#DC2626;color:#FFFFFF;border-radius:3px;cursor:pointer;font-size:10px;font-weight:700;padding:1px 5px;line-height:1;flex-shrink:0;transition:all .12s}
 .tl-vcard-res:hover{background:#B91C1C}
-.tl-vcard-bot{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-family:monospace;color:#4B5563;line-height:1}
-.tl-vcard-dur{font-weight:700;color:#111}
+.tl-vcard-bot{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-family:monospace;color:#475569;line-height:1.2;gap:4px}
+.tl-vcard-dur{font-weight:700;color:#0F172A;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.tl-vcard-range{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Split Seam between separated clips */
-.tl-split-seam{position:absolute;top:16px;bottom:2px;width:2px;background:#18120e;z-index:5;pointer-events:none;transform:translateX(-50%)}
-.tl-seam-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#18120e;color:#FFE500;display:grid;place-items:center;font-size:9px;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.tl-split-seam{position:absolute;top:20px;bottom:4px;width:2px;background:#0F172A;z-index:5;pointer-events:none;transform:translateX(-50%)}
+.tl-seam-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#0F172A;color:#FFFFFF;display:grid;place-items:center;font-size:9px;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
 
-/* Left and Right Trim Handles */
-.tl-handle{position:absolute;top:calc(18px + (50px / 2));transform:translateY(-50%);width:16px;height:38px;background:#FFFFFF;border:2px solid #18120e;border-radius:6px;cursor:ew-resize;display:grid;place-items:center;box-shadow:0 1px 5px rgba(0,0,0,0.25);z-index:8;touch-action:none}
-.tl-handle::after{content:"";width:2px;height:14px;background:#18120e;box-shadow:3px 0 0 #18120e,-3px 0 0 #18120e;border-radius:1px}
-.tl-handle.left{left:-8px}
-.tl-handle.right{right:-8px}
+/* Left and Right NLE Bracket Trim Handles */
+.tl-handle{position:absolute;top:calc(20px + (49px / 2));transform:translateY(-50%);width:13px;height:42px;background:#0F172A;cursor:ew-resize;display:flex;align-items:center;justify-content:center;z-index:9;touch-action:none;transition:background .12s,transform .1s}
+.tl-handle::after{content:"";width:2px;height:12px;background:#FFFFFF;box-shadow:2px 0 0 #FFFFFF,-2px 0 0 #FFFFFF;border-radius:1px}
+.tl-handle:hover{background:#2563EB}
+.tl-handle.left{left:-6px;border-radius:4px 0 0 4px}
+.tl-handle.right{right:-6px;border-radius:0 4px 4px 0}
 
-/* Interactive Split Pointer Line */
+/* Playhead / Split Pointer */
 .tl-pointer{position:absolute;top:0;bottom:0;width:0;z-index:15;touch-action:none;transform:translateX(-50%);pointer-events:none}
-.tl-pointer-line{position:absolute;top:0;bottom:0;left:0;width:2px;background:#2563EB;box-shadow:0 0 6px rgba(37,99,235,0.7);pointer-events:none}
-.tl-pointer-cap{position:absolute;top:0;left:0;transform:translateX(-50%);width:24px;height:22px;cursor:ew-resize;pointer-events:auto;display:flex;flex-direction:column;align-items:center;z-index:2}
-.tl-needle-shape{width:18px;height:14px;background:#2563EB;border-radius:3px 3px 0 0;clip-path:polygon(0 0, 100% 0, 100% 60%, 50% 100%, 0 60%);box-shadow:0 2px 5px rgba(0,0,0,0.3)}
-.tl-needle-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:2px;background:#1E293B;color:#FFFFFF;font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,0.25)}
-.tl-needle-split-btn{position:absolute;top:21px;left:6px;background:#2563EB;color:#FFFFFF;border:1.5px solid #FFFFFF;border-radius:999px;font-size:10px;font-weight:700;padding:2px 8px;box-shadow:0 3px 8px rgba(0,0,0,0.3);cursor:pointer;white-space:nowrap;pointer-events:auto;display:inline-flex;align-items:center;gap:3px;z-index:25;transition:transform .1s ease,background .15s ease}
+.tl-pointer-line{position:absolute;top:0;bottom:0;left:0;width:2px;background:#2563EB;box-shadow:0 0 4px rgba(37,99,235,0.6);pointer-events:none}
+.tl-pointer-cap{position:absolute;top:0;left:0;transform:translateX(-50%);width:26px;height:22px;cursor:ew-resize;pointer-events:auto;display:flex;flex-direction:column;align-items:center;z-index:16}
+.tl-needle-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:3px;background:#0F172A;color:#FFFFFF;font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,0.25)}
+.tl-needle-shape{width:14px;height:15px;background:#2563EB;clip-path:polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%)}
+.tl-needle-split-btn{position:absolute;top:22px;left:7px;background:#2563EB;color:#FFFFFF;border:1.5px solid #FFFFFF;border-radius:999px;font-size:10px;font-weight:700;padding:2px 7px;box-shadow:0 2px 6px rgba(0,0,0,0.25);cursor:pointer;white-space:nowrap;pointer-events:auto;display:inline-flex;align-items:center;gap:3px;z-index:25;transition:transform .1s,background .12s}
 .tl-needle-split-btn:hover{background:#1D4ED8;transform:scale(1.05)}
 .tl-needle-split-btn:active{transform:scale(0.96)}
 
-.tl-cut-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line-2,#e5e7eb)}
-.tl-cut-btns{display:flex;align-items:center;gap:6px}
-.tl-cut-btn{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2,#d1d5db);background:var(--muted,#f3f4f6);color:var(--text,#111);font-size:11px;font-weight:600;cursor:pointer}
-.tl-cut-btn:hover{background:var(--line,#e5e7eb);color:var(--brand-ink,#000)}
-.tl-cut-btn.split{border-color:#2563EB;background:#EFF6FF;color:#1D4ED8}
-.tl-cut-btn.split:hover{background:#DBEAFE}
-.tl-seg-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
-.tl-seg-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;font-size:11px;font-family:monospace;background:#FFFFFF;border:1px solid var(--line-2,#d1d5db);color:var(--text,#111);user-select:none;transition:all .15s ease}
-.tl-seg-chip.deleted{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
-.tl-seg-chip .seg-del{border:0;background:transparent;color:#DC2626;cursor:pointer;font-weight:700;font-size:11px;padding:0 3px;border-radius:3px}
-.tl-seg-chip .seg-del:hover{background:rgba(220,38,38,0.15)}
-.tl-seg-chip .seg-res{border:0;background:transparent;color:#16A34A;cursor:pointer;font-weight:700;font-size:11px;padding:0 3px;border-radius:3px}
-.tl-seg-chip .seg-res:hover{background:rgba(22,163,74,0.15)}
-.tl-progress-bar{position:relative;height:4px;background:var(--line,#e2e8f0);border-radius:2px;overflow:hidden;margin-top:5px}
+/* Progress Bar */
+.tl-progress-bar{position:relative;height:3px;background:#E2E8F0;border-radius:2px;overflow:hidden}
 .tl-progress-fill{position:absolute;left:0;top:0;bottom:0;background:#2563EB;border-radius:2px;width:0%;transition:width 0.05s linear}
-.tl-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--dim,#666);margin-top:2px}
-.tl-fine{display:flex;align-items:center;gap:3px}
-.tl-fine input{width:64px;padding:2px 4px;height:24px;border:1px solid var(--line-2,#d1d5db);border-radius:6px;background:#FFFFFF;color:var(--text,#111);font-size:11px;text-align:center;font-family:monospace}
-.tl-btn-step{min-width:24px;height:24px;padding:0 3px;display:grid;place-items:center;border-radius:5px;border:1px solid var(--line-2,#d1d5db);background:var(--muted,#f3f4f6);color:var(--text,#111);font-size:10px;cursor:pointer}
-.tl-btn-step:hover{background:var(--line,#e5e7eb);color:var(--brand-ink,#000)}
+
+/* 3. Action Toolbar */
+.tl-action-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-top:4px}
+.tl-action-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tl-btn-play{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;border:1px solid #CBD5E1;background:#FFFFFF;color:#0F172A;cursor:pointer;transition:all .12s;padding:0}
+.tl-btn-play svg{width:15px;height:15px;fill:currentColor}
+.tl-btn-play:hover{background:#F1F5F9;border-color:#94A3B8;color:#2563EB}
+.tl-btn-play:active{background:#E2E8F0}
+.tl-btn-split{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border-radius:6px;border:1px solid #2563EB;background:#2563EB;color:#FFFFFF;font-size:12px;font-weight:600;cursor:pointer;transition:all .12s}
+.tl-btn-split svg{width:13px;height:13px;fill:currentColor}
+.tl-btn-split b{font-family:monospace;font-weight:700}
+.tl-btn-split:hover{background:#1D4ED8;border-color:#1D4ED8}
+.tl-btn-split:active{transform:scale(0.98)}
+.tl-btn-reset{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 10px;border-radius:6px;border:1px solid #CBD5E1;background:#FFFFFF;color:#475569;font-size:11px;font-weight:600;cursor:pointer;transition:all .12s}
+.tl-btn-reset:hover{background:#F1F5F9;color:#0F172A;border-color:#94A3B8}
+.tl-btn-reset[disabled]{opacity:0.45;cursor:not-allowed;pointer-events:none}
+.tl-action-right{display:flex;align-items:center}
+.tl-kept-text{font-size:12px;color:#475569}
+.tl-kept-text b{color:#0F172A;font-weight:700}
+
+/* 4. Cut Segments List */
+.tl-seg-list{display:flex;flex-direction:column;gap:4px;width:100%}
+.tl-seg-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 10px;border-radius:6px;font-size:11px;background:#F8FAFC;border:1px solid #E2E8F0;cursor:pointer;transition:all .12s}
+.tl-seg-item:hover{background:#F1F5F9;border-color:#CBD5E1}
+.tl-seg-item.deleted{background:#FEF2F2;border-color:#FECACA;color:#991B1B}
+.tl-seg-info{display:flex;align-items:center;gap:8px;font-family:monospace}
+.tl-seg-name{font-weight:700;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1E3A8A}
+.tl-seg-name.cut{color:#DC2626}
+.tl-seg-range{color:#475569}
+.tl-seg-dur{font-weight:700;color:#0F172A}
+.tl-seg-actions button{border:1px solid transparent;background:transparent;padding:2px 7px;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:3px;transition:all .12s}
+.tl-seg-actions .seg-del{color:#DC2626;border-color:rgba(220,38,38,0.25);background:#FEF2F2}
+.tl-seg-actions .seg-del:hover{background:#DC2626;color:#FFFFFF;border-color:#DC2626}
+.tl-seg-actions .seg-res{color:#16A34A;border-color:rgba(22,163,74,0.25);background:#F0FDF4}
+.tl-seg-actions .seg-res:hover{background:#16A34A;color:#FFFFFF;border-color:#16A34A}
+
+/* 5. Fine Adjustment Controls Bar */
+.tl-fine-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:6px;border-top:1px solid var(--line,#e2e8f0);flex-wrap:wrap}
+.tl-fine-group{display:flex;align-items:center;gap:3px}
+.tl-fine-tag{font-size:10px;font-weight:700;color:#64748B;letter-spacing:0.5px;margin-right:4px;text-transform:uppercase}
+.tl-btn-step{min-width:25px;height:25px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;border:1px solid #CBD5E1;background:#FFFFFF;color:#334155;font-size:10px;font-weight:600;cursor:pointer;transition:all .12s}
+.tl-btn-step:hover{background:#F1F5F9;color:#0F172A;border-color:#94A3B8}
+.tl-btn-step:active{background:#E2E8F0}
+.tl-fine-input{width:66px;height:25px;padding:0 4px;border:1px solid #CBD5E1;border-radius:4px;background:#FFFFFF;color:#0F172A;font-size:11px;text-align:center;font-family:monospace;font-weight:600;box-sizing:border-box}
+.tl-fine-input:focus{border-color:#2563EB;outline:none}
+.tl-fine-center{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#64748B;text-align:center}
+.tl-fine-center .sub{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#94A3B8}
+.tl-fine-center b{color:#0F172A;font-family:monospace;font-size:11px}
 
 .stage-wrap{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .stage-top-pill{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:6;pointer-events:auto}
@@ -2932,22 +2979,28 @@ function drawClipDlg(full) {
           </label>
         </div>
         <div class="tl-section">
-          <div class="tl-label-row">
-            <h3>Clip timeline</h3>
-            <div class="tl-zoom-ctrls">
-              <span class="sub">Ctrl+Scroll to zoom</span>
-              <button type="button" class="tl-btn-z" id="tl_z_out" title="Zoom out">-</button>
-              <span class="tl-z-val" id="tl_z_val">1.0x</span>
-              <button type="button" class="tl-btn-z" id="tl_z_in" title="Zoom in">+</button>
-              <button type="button" class="tl-btn-z fit" id="tl_z_fit" title="Fit to selection">Fit</button>
-            </div>
-          </div>
           <div class="tl-container" id="tl_box">
-            <div class="tl-header">
-              <span>Start: <b id="tl_start_lbl">${fmt(c.start)}</b></span>
-              <span class="tl-badge" id="tl_dur">${(c.end - c.start).toFixed(1)}s</span>
-              <span>End: <b id="tl_end_lbl">${fmt(c.end)}</b></span>
+            <!-- 1. Header Toolbar -->
+            <div class="tl-header-toolbar">
+              <div class="tl-header-left">
+                <span class="tl-title">${ic("film")} Clip timeline</span>
+                <div class="tl-range-pill" title="Clip boundaries and selected duration">
+                  <span id="tl_start_lbl">${fmt(c.start)}</span>
+                  <span class="tl-range-arrow">→</span>
+                  <span id="tl_end_lbl">${fmt(c.end)}</span>
+                  <span class="tl-dur-badge" id="tl_dur">${(c.end - c.start).toFixed(1)}s</span>
+                </div>
+              </div>
+              <div class="tl-zoom-toolbar">
+                <span class="tl-zoom-hint" title="Hold Ctrl and scroll mouse wheel over timeline to zoom">Ctrl+Scroll</span>
+                <button type="button" class="tl-zoom-btn" id="tl_z_out" title="Zoom out (Ctrl + Wheel Down)">${ic("minus")}</button>
+                <span class="tl-zoom-val" id="tl_z_val" title="Current zoom level">100%</span>
+                <button type="button" class="tl-zoom-btn" id="tl_z_in" title="Zoom in (Ctrl + Wheel Up)">${ic("plus")}</button>
+                <button type="button" class="tl-zoom-btn fit" id="tl_z_fit" title="Fit clip in view">Fit</button>
+              </div>
             </div>
+
+            <!-- 2. Timeline Visualization -->
             <div class="tl-track-wrap">
               <div class="tl-viewport" id="tl_viewport">
                 <div class="tl-track" id="tl_track">
@@ -2957,7 +3010,7 @@ function drawClipDlg(full) {
                   <div class="tl-handle left" id="tl_h_left" title="Drag to adjust clip start"></div>
                   <div class="tl-handle right" id="tl_h_right" title="Drag to adjust clip end"></div>
                   <div class="tl-dim right" id="tl_dim_r"></div>
-                  <!-- The Draggable Split Pointer Line (as requested) -->
+                  <!-- The Draggable Split Pointer Line -->
                   <div class="tl-pointer" id="tl_pointer">
                     <div class="tl-pointer-line"></div>
                     <div class="tl-pointer-cap" id="tl_pointer_cap" title="Drag to scrub / position split line">
@@ -2970,34 +3023,50 @@ function drawClipDlg(full) {
               </div>
               <div class="tl-progress-bar"><div class="tl-progress-fill" id="tl_prog"></div></div>
             </div>
-            <div class="tl-cut-bar" id="tl_cut_bar">
-              <div class="tl-cut-btns">
-                <button type="button" class="tl-cut-btn split" id="tl_split_btn" title="Split clip at the current playhead position">
-                  ${ic("scissors")}Split at <b id="tl_split_t_lbl" style="font-family:monospace">${fmt(c.start)}</b>
+
+            <!-- 3. Action Toolbar with Play/Pause, Split, Reset Cuts, Kept Info -->
+            <div class="tl-action-toolbar" id="tl_action_toolbar">
+              <div class="tl-action-left">
+                <button type="button" class="tl-btn-play" id="tl_play_btn" title="Play / Pause (Space)" aria-label="Play">
+                  ${ic("play_f")}
                 </button>
-                <button type="button" class="tl-cut-btn" id="tl_reset_cuts_btn" title="Clear all cuts and restore full range">
+                <button type="button" class="tl-btn-split" id="tl_split_btn" title="Split clip at the current playhead position">
+                  ${ic("scissors")}<span>Split at <b id="tl_split_t_lbl">${fmt(c.start)}</b></span>
+                </button>
+                <button type="button" class="tl-btn-reset" id="tl_reset_cuts_btn" title="Clear all cuts and restore full range">
                   Reset cuts
                 </button>
               </div>
-              <span class="sub" id="tl_kept_lbl" style="font-size:11px">Kept: <b>${(c.end - c.start).toFixed(1)}s</b></span>
+              <div class="tl-action-right">
+                <span class="tl-kept-text" id="tl_kept_lbl">Kept: <b>${(c.end - c.start).toFixed(1)}s</b></span>
+              </div>
             </div>
+
+            <!-- 4. Cut Segments Information -->
             <div class="tl-seg-list" id="tl_seg_list"></div>
             <input type="hidden" data-f="segments" id="tl_in_segments" value="${esc(JSON.stringify(c.segments || []))}">
-            <div class="tl-footer">
-              <div class="tl-fine">
-                <button type="button" class="tl-btn-step" data-step-s="-1" title="-1s">-1s</button>
-                <button type="button" class="tl-btn-step" data-step-s="-0.1" title="-0.1s">-.1s</button>
-                <input data-f="start" id="tl_in_start" type="number" step="0.1" value="${c.start}">
-                <button type="button" class="tl-btn-step" data-step-s="0.1" title="+0.1s">+.1s</button>
-                <button type="button" class="tl-btn-step" data-step-s="1" title="+1s">+1s</button>
+
+            <!-- 5. Fine Adjustment Controls -->
+            <div class="tl-fine-bar">
+              <div class="tl-fine-group">
+                <span class="tl-fine-tag">START</span>
+                <button type="button" class="tl-btn-step" data-step-s="-1" title="Subtract 1 second from start">-1s</button>
+                <button type="button" class="tl-btn-step" data-step-s="-0.1" title="Subtract 0.1 second from start">-.1s</button>
+                <input class="tl-fine-input" data-f="start" id="tl_in_start" type="number" step="0.1" value="${c.start}" title="Start timestamp (seconds)">
+                <button type="button" class="tl-btn-step" data-step-s="0.1" title="Add 0.1 second to start">+.1s</button>
+                <button type="button" class="tl-btn-step" data-step-s="1" title="Add 1 second to start">+1s</button>
               </div>
-              <span style="font-size:11px;opacity:0.75" id="tl_total_lbl">Total ${fmt(j.duration || c.end)}</span>
-              <div class="tl-fine">
-                <button type="button" class="tl-btn-step" data-step-e="-1" title="-1s">-1s</button>
-                <button type="button" class="tl-btn-step" data-step-e="-0.1" title="-0.1s">-.1s</button>
-                <input data-f="end" id="tl_in_end" type="number" step="0.1" value="${c.end}">
-                <button type="button" class="tl-btn-step" data-step-e="0.1" title="+0.1s">+.1s</button>
-                <button type="button" class="tl-btn-step" data-step-e="1" title="+1s">+1s</button>
+              <div class="tl-fine-center">
+                <span class="sub">Source duration</span>
+                <b id="tl_total_lbl">${fmt(j.duration || c.end)}</b>
+              </div>
+              <div class="tl-fine-group">
+                <span class="tl-fine-tag">END</span>
+                <button type="button" class="tl-btn-step" data-step-e="-1" title="Subtract 1 second from end">-1s</button>
+                <button type="button" class="tl-btn-step" data-step-e="-0.1" title="Subtract 0.1 second from end">-.1s</button>
+                <input class="tl-fine-input" data-f="end" id="tl_in_end" type="number" step="0.1" value="${c.end}" title="End timestamp (seconds)">
+                <button type="button" class="tl-btn-step" data-step-e="0.1" title="Add 0.1 second to end">+.1s</button>
+                <button type="button" class="tl-btn-step" data-step-e="1" title="Add 1 second to end">+1s</button>
               </div>
             </div>
           </div>
@@ -3051,6 +3120,7 @@ function initTimeline(j, c) {
   const zIn = $("#tl_z_in");
   const zOut = $("#tl_z_out");
   const zFit = $("#tl_z_fit");
+  const playBtn = $("#tl_play_btn");
 
   const totalDur = Math.max(Number(j.duration) || 0, c.src_end || 0, c.end || 0, 60);
   const minTime = c.src_offset != null ? c.src_offset : 0;
@@ -3067,6 +3137,37 @@ function initTimeline(j, c) {
   let initStart = 0;
   let initEnd = 0;
   let zoom = 1.0;
+
+  function syncPlayBtn() {
+    if (!playBtn) return;
+    const isPlaying = stageVideo && !stageVideo.paused && !stageVideo.ended;
+    playBtn.innerHTML = isPlaying ? ic("pause") : ic("play_f");
+    playBtn.title = isPlaying ? "Pause (Space)" : "Play (Space)";
+    playBtn.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
+  }
+
+  function togglePlay() {
+    if (!stageVideo) return;
+    if (!isReview) switchToReview(pointerTime, false);
+    if (stageVideo.paused) {
+      if (stageVideo.currentTime >= end || stageVideo.currentTime < start) {
+        const firstKept = segments.find(s => !s.deleted);
+        stageVideo.currentTime = firstKept ? firstKept.start : start;
+      }
+      if (currentSpeed > 0) {
+        stageVideo.playbackRate = currentSpeed;
+        stageVideo.play().catch(() => {});
+      } else {
+        setSpeed(currentSpeed);
+      }
+    } else {
+      stageVideo.pause();
+      if (reverseTimer) { cancelAnimationFrame(reverseTimer); reverseTimer = null; }
+    }
+    syncPlayBtn();
+  }
+
+  if (playBtn) playBtn.onclick = togglePlay;
 
   // Video Speed Controller (-2x, -1x, 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x)
   const speedSelect = $("#clip_speed_select");
@@ -3143,33 +3244,59 @@ function initTimeline(j, c) {
     }
 
     if (segListWrap) {
-      let listHtml = "";
-      let partNum = 1;
-      segments.forEach((s) => {
-        const dur = Math.max(0, s.end - s.start);
-        if (s.deleted) {
-          listHtml += `<div class="tl-seg-chip deleted" data-seg-id="${s.id}">
-            <span><strike>Cut: ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</strike></span>
-            <button type="button" class="seg-res" data-act-res="${s.id}" title="Restore this cut video">↺ Restore</button>
-          </div>`;
-        } else {
-          listHtml += `<div class="tl-seg-chip" data-seg-id="${s.id}">
-            <span><b>Video ${partNum++}:</b> ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</span>
-            <button type="button" class="seg-del" data-act-del="${s.id}" title="Delete this video from clip">✕ Delete</button>
-          </div>`;
-        }
-      });
-      segListWrap.innerHTML = listHtml;
+      const cutCount = segments.filter(s => s.deleted).length;
+      if (segments.length > 1 || cutCount > 0) {
+        let listHtml = "";
+        let partNum = 1;
+        segments.forEach((s) => {
+          const dur = Math.max(0, s.end - s.start);
+          if (s.deleted) {
+            listHtml += `<div class="tl-seg-item deleted" data-seg-id="${s.id}" title="Click to seek to this cut part">
+              <div class="tl-seg-info">
+                <span class="tl-seg-name cut">✂ Cut Part:</span>
+                <span class="tl-seg-range"><strike>${fmt(s.start)} – ${fmt(s.end)}</strike></span>
+                <span class="tl-seg-dur">(${dur.toFixed(1)}s)</span>
+              </div>
+              <div class="tl-seg-actions">
+                <button type="button" class="seg-res" data-act-res="${s.id}" title="Restore this cut video">↺ Restore</button>
+              </div>
+            </div>`;
+          } else {
+            listHtml += `<div class="tl-seg-item" data-seg-id="${s.id}" title="Click to seek to this video part">
+              <div class="tl-seg-info">
+                <span class="tl-seg-name">🎬 Video ${partNum++}:</span>
+                <span class="tl-seg-range">${fmt(s.start)} – ${fmt(s.end)}</span>
+                <span class="tl-seg-dur">(${dur.toFixed(1)}s)</span>
+              </div>
+              <div class="tl-seg-actions">
+                <button type="button" class="seg-del" data-act-del="${s.id}" title="Delete this video from clip">✕ Delete</button>
+              </div>
+            </div>`;
+          }
+        });
+        segListWrap.innerHTML = listHtml;
+        segListWrap.style.display = "flex";
+      } else {
+        segListWrap.innerHTML = "";
+        segListWrap.style.display = "none";
+      }
     }
 
     const keptSegs = segments.filter(s => !s.deleted);
     const keptDur = keptSegs.reduce((acc, s) => acc + (s.end - s.start), 0);
     const cutCount = segments.filter(s => s.deleted).length;
     if (durLbl) {
-      durLbl.innerHTML = cutCount > 0 ? `${keptDur.toFixed(1)}s <small style="font-weight:normal;opacity:0.75">(${cutCount} cut)</small>` : `${keptDur.toFixed(1)}s`;
+      durLbl.textContent = `${keptDur.toFixed(1)}s`;
     }
     if (keptLbl) {
-      keptLbl.innerHTML = cutCount > 0 ? `Kept: <b>${keptDur.toFixed(1)}s</b> (${cutCount} video${cutCount>1?'s':''} cut out)` : `Kept: <b>${keptDur.toFixed(1)}s</b> (${keptSegs.length} video${keptSegs.length>1?'s':''})`;
+      keptLbl.innerHTML = cutCount > 0 
+        ? `Kept: <b>${keptDur.toFixed(1)}s</b> (${cutCount} cut)` 
+        : `Kept: <b>${keptDur.toFixed(1)}s</b>`;
+    }
+    if (resetCutsBtn) {
+      const hasCuts = segments.length > 1 || cutCount > 0;
+      resetCutsBtn.disabled = !hasCuts;
+      resetCutsBtn.title = hasCuts ? "Clear all cuts and restore full range" : "No cuts to reset";
     }
     if (inSegments) {
       inSegments.value = cutCount > 0 ? JSON.stringify(keptSegs.map(s => [Math.round(s.start * 100) / 100, Math.round(s.end * 100) / 100])) : "";
@@ -3336,7 +3463,7 @@ function initTimeline(j, c) {
 
     zoom = newZoom;
     track.style.width = (zoom * 100) + "%";
-    if (zVal) zVal.textContent = zoom.toFixed(1) + "x";
+    if (zVal) zVal.textContent = Math.round(zoom * 100) + "%";
 
     const newTrackW = track.offsetWidth || (vRect.width * zoom);
     const newOffset = ((timeAtAnchor - minTime) / span) * newTrackW;
@@ -3396,6 +3523,8 @@ function initTimeline(j, c) {
     if (splitTLbl) splitTLbl.textContent = fmt(ct);
     if (needleBadge) needleBadge.textContent = fmt(ct);
     if (needleSplitBtn) needleSplitBtn.title = "Split at " + fmt(ct);
+    if (splitBtn) splitBtn.title = "Split clip at " + fmt(ct);
+    syncPlayBtn();
 
     if (pointer) {
       pointer.style.left = toPct(ct) + "%";
@@ -3574,6 +3703,7 @@ function initTimeline(j, c) {
         stageVideo.currentTime = pointerTime;
         stageVideo.pause();
       }
+      syncPlayBtn();
       updateVisuals(pointerTime);
     }
 
@@ -3597,6 +3727,7 @@ function initTimeline(j, c) {
         stageVideo.currentTime = pointerTime;
         stageVideo.pause();
       }
+      syncPlayBtn();
     }
   }
 
@@ -3614,13 +3745,38 @@ function initTimeline(j, c) {
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
 
+  const onKeyDown = e => {
+    if (e.code === "Space" || e.key === " ") {
+      const el = document.activeElement;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      const dlg = $("#clipdlg");
+      if (dlg && dlg.open) {
+        e.preventDefault();
+        togglePlay();
+      }
+    }
+  };
+  window.addEventListener("keydown", onKeyDown);
+
   const cleanup = () => {
     if (reverseTimer) { cancelAnimationFrame(reverseTimer); reverseTimer = null; }
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("keydown", onKeyDown);
+    if (stageVideo) {
+      stageVideo.removeEventListener("play", syncPlayBtn);
+      stageVideo.removeEventListener("pause", syncPlayBtn);
+      stageVideo.removeEventListener("ended", syncPlayBtn);
+    }
     $("#clipdlg")?.removeEventListener("close", cleanup);
   };
   $("#clipdlg")?.addEventListener("close", cleanup);
+
+  if (stageVideo) {
+    stageVideo.addEventListener("play", syncPlayBtn);
+    stageVideo.addEventListener("pause", syncPlayBtn);
+    stageVideo.addEventListener("ended", syncPlayBtn);
+  }
 
   track?.addEventListener("click", e => {
     if (e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res, .tl-needle-split-btn, #tl_needle_split_btn") || dragType) return;
@@ -3630,6 +3786,7 @@ function initTimeline(j, c) {
     pointerTime = Math.max(minTime, Math.min(maxTime, clickTime));
     switchToReview(pointerTime, false);
     if (stageVideo) stageVideo.pause();
+    syncPlayBtn();
   });
 
   if (clipsTrack) {
@@ -3702,7 +3859,7 @@ function initTimeline(j, c) {
       if (delBtn) return deleteSegment(Number(delBtn.dataset.actDel));
       const resBtn = e.target.closest("[data-act-res]");
       if (resBtn) return restoreSegment(Number(resBtn.dataset.actRes));
-      const chip = e.target.closest(".tl-seg-chip");
+      const chip = e.target.closest(".tl-seg-item, .tl-seg-chip");
       if (chip) {
         const seg = segments.find(s => s.id === Number(chip.dataset.segId));
         if (seg) switchToReview(seg.start, true);
