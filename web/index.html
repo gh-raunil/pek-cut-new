@@ -3191,11 +3191,17 @@ function initTimeline(j, c) {
 
   function togglePlay() {
     if (!stageVideo) return;
-    if (!isReview) switchToReview(pointerTime, false);
     if (stageVideo.paused) {
-      if (stageVideo.currentTime >= end || stageVideo.currentTime < start) {
-        const firstKept = segments.find(s => !s.deleted);
-        stageVideo.currentTime = firstKept ? firstKept.start : start;
+      if (isReview) {
+        if (stageVideo.currentTime >= end || stageVideo.currentTime < start) {
+          const firstKept = segments.find(s => !s.deleted);
+          stageVideo.currentTime = firstKept ? firstKept.start : start;
+        }
+      } else {
+        const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+        if (stageVideo.currentTime >= clipDur - 0.05 || stageVideo.ended) {
+          stageVideo.currentTime = 0;
+        }
       }
       if (currentSpeed > 0) {
         stageVideo.playbackRate = currentSpeed;
@@ -3449,10 +3455,11 @@ function initTimeline(j, c) {
               }
             }
           } else {
-            if (nt <= 0) nt = stageVideo.duration || 0;
+            const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+            if (nt <= 0) nt = clipDur;
           }
           stageVideo.currentTime = nt;
-          updateVisuals(nt);
+          updateVisuals(isReview ? nt : (start + nt));
         }
         reverseTimer = requestAnimationFrame(reverseStep);
       }
@@ -3561,7 +3568,15 @@ function initTimeline(j, c) {
     if (inStart && inStart !== document.activeElement) inStart.value = start.toFixed(2);
     if (inEnd && inEnd !== document.activeElement) inEnd.value = end.toFixed(2);
 
-    const ct = currTime != null ? currTime : (stageVideo ? stageVideo.currentTime : pointerTime);
+    let ct;
+    if (currTime != null) {
+      ct = currTime;
+    } else if (stageVideo) {
+      ct = isReview ? stageVideo.currentTime : (start + (stageVideo.currentTime || 0));
+    } else {
+      ct = pointerTime;
+    }
+    ct = Math.max(minTime, Math.min(maxTime, Math.round(ct * 100) / 100));
     pointerTime = ct;
     if (splitTLbl) splitTLbl.textContent = fmt(ct);
     if (needleBadge) needleBadge.textContent = fmt(ct);
@@ -3611,9 +3626,26 @@ function initTimeline(j, c) {
 
     updateVisuals(start);
 
-    if (seekVideo) {
-      switchToReview(start, false);
+    if (seekVideo && stageVideo) {
+      if (isReview) stageVideo.currentTime = start;
+      else stageVideo.currentTime = 0;
+      stageVideo.pause();
     }
+  }
+
+  function seekVideoTo(t) {
+    pointerTime = Math.max(minTime, Math.min(maxTime, Math.round(t * 100) / 100));
+    if (stageVideo) {
+      if (isReview) {
+        stageVideo.currentTime = pointerTime;
+      } else {
+        const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+        stageVideo.currentTime = Math.max(0, Math.min(clipDur, pointerTime - start));
+      }
+      stageVideo.pause();
+    }
+    syncPlayBtn();
+    updateVisuals(pointerTime);
   }
 
   function switchToReview(seekTime, autoplay = false) {
@@ -3692,8 +3724,20 @@ function initTimeline(j, c) {
           const firstKept = segments.find(s => !s.deleted);
           stageVideo.currentTime = firstKept ? firstKept.start : start;
         }
+        updateVisuals(stageVideo.currentTime);
+      } else {
+        const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+        if (stageVideo.currentTime >= clipDur - 0.02 || stageVideo.ended) {
+          if (isLoop) {
+            stageVideo.currentTime = 0;
+            stageVideo.play().catch(() => {});
+          } else {
+            stageVideo.pause();
+          }
+        }
+        const currentT = start + Math.max(0, Math.min(clipDur, stageVideo.currentTime));
+        updateVisuals(currentT);
       }
-      updateVisuals(stageVideo.currentTime);
     };
   }
 
@@ -3726,8 +3770,8 @@ function initTimeline(j, c) {
       if (initEnd - ns > 180) ns = initEnd - 180;
       setTimes(ns, initEnd, false);
       if (stageVideo) {
-        if (!isReview) switchToReview(start, false);
-        stageVideo.currentTime = start;
+        if (isReview) stageVideo.currentTime = start;
+        else stageVideo.currentTime = 0;
         stageVideo.pause();
       }
     } else if (dragType === "right") {
@@ -3735,8 +3779,11 @@ function initTimeline(j, c) {
       if (ne - initStart > 180) ne = initStart + 180;
       setTimes(initStart, ne, false);
       if (stageVideo) {
-        if (!isReview) switchToReview(end, false);
-        stageVideo.currentTime = end;
+        if (isReview) stageVideo.currentTime = end;
+        else {
+          const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+          stageVideo.currentTime = clipDur;
+        }
         stageVideo.pause();
       }
     } else if (dragType === "range") {
@@ -3756,8 +3803,8 @@ function initTimeline(j, c) {
         renderSegments();
       }
       if (stageVideo) {
-        if (!isReview) switchToReview(ns, false);
-        stageVideo.currentTime = ns;
+        if (isReview) stageVideo.currentTime = ns;
+        else stageVideo.currentTime = 0;
         stageVideo.pause();
       }
       syncPlayBtn();
@@ -3765,14 +3812,7 @@ function initTimeline(j, c) {
     } else if (dragType === "pointer") {
       const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
       const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
-      pointerTime = Math.round(t * 100) / 100;
-      if (stageVideo) {
-        if (!isReview) switchToReview(pointerTime, false);
-        stageVideo.currentTime = pointerTime;
-        stageVideo.pause();
-      }
-      syncPlayBtn();
-      updateVisuals(pointerTime);
+      seekVideoTo(t);
     }
 
     if (viewport) {
@@ -3790,9 +3830,15 @@ function initTimeline(j, c) {
       if (e.target && e.target.releasePointerCapture) {
         try { e.target.releasePointerCapture(e.pointerId); } catch {}
       }
+      const wasType = dragType;
       dragType = null;
-      if (stageVideo && isReview) {
-        stageVideo.currentTime = pointerTime;
+      if (stageVideo) {
+        if (isReview) {
+          stageVideo.currentTime = pointerTime;
+        } else if (wasType === "pointer") {
+          const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+          stageVideo.currentTime = Math.max(0, Math.min(clipDur, pointerTime - start));
+        }
         stageVideo.pause();
       }
       syncPlayBtn();
@@ -3813,14 +3859,7 @@ function initTimeline(j, c) {
     const rect = track.getBoundingClientRect();
     const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
     const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
-    pointerTime = Math.round(t * 100) / 100;
-    if (stageVideo) {
-      if (!isReview) switchToReview(pointerTime, false);
-      stageVideo.currentTime = pointerTime;
-      stageVideo.pause();
-    }
-    syncPlayBtn();
-    updateVisuals(pointerTime);
+    seekVideoTo(t);
   });
 
   window.addEventListener("pointermove", onPointerMove);
@@ -3864,10 +3903,7 @@ function initTimeline(j, c) {
     const rect = track.getBoundingClientRect();
     const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
     const clickTime = Math.round(fromPct(clickPct) * 100) / 100;
-    pointerTime = Math.max(minTime, Math.min(maxTime, clickTime));
-    switchToReview(pointerTime, false);
-    if (stageVideo) stageVideo.pause();
-    syncPlayBtn();
+    seekVideoTo(clickTime);
   });
 
   if (clipsTrack) {
@@ -3915,7 +3951,7 @@ function initTimeline(j, c) {
 
   if (splitBtn) {
     splitBtn.onclick = () => {
-      const ct = stageVideo ? stageVideo.currentTime : pointerTime;
+      const ct = pointerTime;
       splitAt(ct);
     };
   }
