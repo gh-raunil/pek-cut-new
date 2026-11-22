@@ -64,8 +64,8 @@ Paste a YouTube, Twitch or Kick link (or upload a video file) and PeakCut finds 
 ### 2. Clone the Repository
 
 ```bash
-git clone https://github.com/gh-raunil/peek-cut-with-power.git
-cd peek-cut-with-power
+git clone https://github.com/gh-raunil/pek-cut-new.git
+cd pek-cut-new
 ```
 
 ---
