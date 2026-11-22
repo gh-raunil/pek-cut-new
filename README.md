@@ -1,235 +1,192 @@
-# PeakCut
+# PeakCut (with Power)
 
-Turn long videos and live streams into captioned vertical clips, ready to post. Free and open source: run it on
-your own computer or server, with your own AI key.
+Turn long videos and live streams into captioned vertical clips, ready to post. Free and open source: run it on your own computer or server, with your own AI key.
 
-Paste a YouTube, Twitch or Kick link (or upload a file) and PeakCut finds the moments worth clipping, cuts them to
-9:16, adds word-by-word captions and a hook, and can post them to your connected accounts. It can also record a
-creator's live stream and clip the highlights while the stream is still running.
+Paste a YouTube, Twitch or Kick link (or upload a video file) and PeakCut finds the moments worth clipping, cuts them to 9:16, adds word-by-word animated captions and hook titles, and can post them to your connected accounts. It also features a fully interactive visual timeline editor with multi-trim, zoom, speed controls, and live review.
 
-## What it does
+---
 
-- **Clips from any video.** Transcribes the audio, asks an AI which moments would hold a stranger's attention, and
-  renders each one with captions in one of three styles.
-- **Live clipping.** Records a stream into a rolling buffer and clips as it happens, using loudness, chat activity
-  and the transcript.
-- **Workspaces per creator.** Channels, clip settings, posting rules and an activity log for each creator you clip.
-- **Posting.** Connect YouTube, Instagram and TikTok in one click, then queue or auto-post finished clips, with
-  spacing and daily caps (see [DEPLOY.md](DEPLOY.md#connecting-youtube-instagram-and-tiktok) for the one-time setup).
-- **Many channels.** Connect as many channels as you like, give each its own upload times (say 6 a day from 8:00),
-  sort them into groups, and upload and schedule every ready clip in one click. YouTube publishes each at its time.
-  [CHANNELS.md](CHANNELS.md) shows how to connect a channel.
-- **No sign-in on your own computer.** It opens straight into the dashboard. On a shared server, switch accounts on
-  (`PEAKCUT_ACCOUNTS=1`) for email or Google sign-in and an admin dashboard.
-- **Your own AI.** Gemini, OpenAI, Grok, Groq, OpenRouter, Claude, a local model through Ollama, or anything that
-  speaks the OpenAI chat format. No key at all also works: clips are then picked by loudness.
+## ✨ Features
 
-## Quick start
+- **🎬 Interactive Visual Timeline**:
+  - Drag handles to trim start and end points accurately.
+  - Drag the range bar to slide the entire selected clip window across the source video.
+  - **Fine Stepping**: Quick buttons for `±0.1s` and `±1.0s` adjustments or direct manual input.
+  - **Clean White UI**: Modern, clean, high-contrast timeline layout.
 
-You need Python 3.10 or newer and `ffmpeg`. On Windows: `winget install Gyan.FFmpeg`. On a Mac: `brew install ffmpeg`.
-On Linux: `sudo apt install ffmpeg`. PeakCut finds it by itself and tells you in the dashboard if it is missing.
+- **🔍 Zoom Controls (Ctrl + Scroll Wheel)**:
+  - Hold <kbd>Ctrl</kbd> (or <kbd>Cmd</kbd> on macOS) and scroll up/down over the timeline to smoothly zoom between `1.0x` and `30.0x`.
+  - Centers dynamically on your mouse pointer with adaptive time-tick rulers.
+  - Dedicated buttons for **Zoom In**, **Zoom Out**, and **Fit Clip to View**.
 
-Put PeakCut in a short folder that stays put: `C:\peakcut` on Windows, `~/peakcut` on a Mac or Linux. Not inside a
-temporary folder or an AI assistant's workspace: those get cleaned up, and on Windows a folder that deep stops the
-speech model from loading (Windows can't open files whose full path is over 260 characters). If an AI assistant
-installs it for you, it should ask you where to put it first ([AGENTS.md](AGENTS.md) tells it to).
+- **✂️ Multi-Trim & Cut Deletion**:
+  - **Split at Playhead**: Scrub to any point and click `✂️ Split at [time]` to divide the clip into separate segments.
+  - **Delete Unwanted Parts**: Click `✕ Delete` on any segment chip to cut out dead air, boring stretches, or pauses.
+  - **Live Cut-Skipping**: The review player automatically leaps over deleted segments in real time so you hear and see the final result before rendering.
+  - **Restore Anytime**: One-click `↺ Restore` or `Reset cuts` to undo any splits.
+  - **Seamless FFmpeg Concat**: When re-making the clip, FFmpeg extracts only the kept segments, concatenates video and audio seamlessly with loudness normalization, and automatically remaps subtitle timings.
 
-On Windows:
+- **⚡ Video Speed Controls**:
+  - Select speeds: `-2x`, `-1x`, `0.5x`, `0.75x`, `1x`, `1.25x`, `1.5x`, `2x`.
+  - Review player supports smooth reverse playback (`-1x`, `-2x`) and rate switching.
+  - FFmpeg applies video filters (`setpts`, `reverse`) and audio filters (`atempo`, `areverse`), scaling subtitle durations to match.
+
+- **🤖 AI-Powered Clipping**:
+  - Supports Google Gemini, OpenAI, Grok (xAI), Groq, OpenRouter, Anthropic Claude, or local Ollama models.
+  - Loudness-based fallback if no AI key is provided.
+
+- **👀 Vision-Based Clipping**:
+  - Automatically identifies gameplay highlights, action sequences, or silent video segments by analyzing small frame grids on your machine.
+
+- **🎨 Word-by-Word Captions & Facecam Layouts**:
+  - Animated captions with 3 styles: `Bounce`, `Clean`, and `Hype`.
+  - Automatic webcam/facecam detection for gaming split-screen or PiP (Picture-in-Picture).
+
+- **📢 Multi-Platform Publishing**:
+  - One-click posting and scheduling for YouTube Shorts, Instagram Reels, and TikTok.
+
+---
+
+## 🚀 Quick Start & How to Run
+
+### 1. Prerequisites
+- **Python 3.10+**: Ensure Python 3.10, 3.11, or 3.12 is installed and added to your `PATH`.
+- **FFmpeg**: Required for media processing.
+  - **Windows**: `winget install Gyan.FFmpeg` (or download from [gyan.dev](https://www.gyan.dev/ffmpeg/builds/))
+  - **macOS**: `brew install ffmpeg`
+  - **Linux**: `sudo apt update && sudo apt install ffmpeg`
+
+> [!NOTE]
+> On Windows, keep the project in a short path (e.g. `C:\peakcut` or `D:\peakcut`) to avoid the Windows 260-character path limit for speech models and caption fonts.
+
+---
+
+### 2. Clone the Repository
 
 ```bash
-git clone <this repository> C:\peakcut
+git clone https://github.com/gh-raunil/peek-cut-with-power.git
+cd peek-cut-with-power
 ```
 
+---
+
+### 3. Create and Activate a Virtual Environment
+
+**Windows (PowerShell):**
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+**Windows (Command Prompt):**
+```cmd
+python -m venv .venv
+.\.venv\Scripts\activate.bat
+```
+
+**macOS / Linux:**
 ```bash
-cd C:\peakcut
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-On a Mac or Linux:
+---
 
-```bash
-git clone <this repository> ~/peakcut
-```
-
-```bash
-cd ~/peakcut
-```
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Start the server:
+---
+
+### 5. Download Speech Model (Optional Pre-fetch)
+
+The English speech recognition model (~480 MB) downloads automatically on first run. You can also pre-fetch it ahead of time:
+
+```bash
+python -m studio.fetch_model
+```
+
+*(For Arabic videos, download with: `python -m studio.fetch_model ar`)*
+
+---
+
+### 6. Start the Server
 
 ```bash
 python -m studio.server
 ```
 
-The first start downloads the speech model by itself (about 480 MB, once).
+PeakCut starts listening at:
+👉 **http://127.0.0.1:8765**
 
-Open http://127.0.0.1:8765. There is no sign-in: it opens straight into the dashboard. Go to **Settings, AI**, choose
-your AI service, paste your key and press **Save and test** (see [Choose your AI](#choose-your-ai)).
+Open this address in your browser (Chrome, Edge, Firefox, or Safari). No sign-in is required for local single-user mode.
 
-## Choose your AI
+---
 
-PeakCut needs a chat model that can return JSON. The easy way is in the dashboard: **Settings, AI**. Pick the
-service, paste your key, press **Find models** to choose from the service's own list, then **Save and test**. The
-key is kept in the data folder on your machine and is never shown again.
+## ⚙️ AI Setup (Google Gemini, OpenAI, Ollama, etc.)
 
-If you prefer a file (or run a server), the same three things can go in `.env`. What is saved in the dashboard wins:
+You can configure your AI provider in two ways:
+
+### Option A: From the Dashboard (Recommended)
+1. Open **http://127.0.0.1:8765** in your browser.
+2. Go to **Settings → AI**.
+3. Select your provider (e.g. `Google Gemini`, `OpenAI`, `Groq`, `Ollama`).
+4. Paste your API key, click **Find models**, and press **Save and test**.
+
+### Option B: Using a `.env` File
+Create a `.env` file in the project root:
 
 ```ini
 PEAKCUT_AI_PROVIDER=gemini
 PEAKCUT_AI_MODELS=gemini-2.5-flash
-PEAKCUT_AI_KEY=your-key-here
+PEAKCUT_AI_KEY=your_gemini_api_key_here
 ```
 
-| `PEAKCUT_AI_PROVIDER` | Service | Where to get a key |
+| Provider | Setting | Key URL |
 |---|---|---|
-| `gemini` | Google Gemini | https://aistudio.google.com/apikey |
-| `openai` | OpenAI | https://platform.openai.com/api-keys |
-| `xai` | Grok (xAI) | https://console.x.ai |
-| `groq` | Groq | https://console.groq.com/keys |
-| `openrouter` | OpenRouter (many models, one key) | https://openrouter.ai/keys |
-| `anthropic` | Claude | https://console.anthropic.com |
-| `ollama` | A model on your own machine, no key | https://ollama.com |
-| `custom` | Any OpenAI-compatible address: also set `PEAKCUT_AI_BASE_URL` | |
+| **Google Gemini** | `gemini` | https://aistudio.google.com/apikey |
+| **OpenAI** | `openai` | https://platform.openai.com/api-keys |
+| **Grok (xAI)** | `xai` | https://console.x.ai |
+| **Groq** | `groq` | https://console.groq.com/keys |
+| **OpenRouter** | `openrouter` | https://openrouter.ai/keys |
+| **Anthropic** | `anthropic` | https://console.anthropic.com |
+| **Ollama (Local)** | `ollama` | Run locally on http://localhost:11434 (No key needed) |
 
-- `PEAKCUT_AI_MODELS` is the model id exactly as the service names it. Model names change often, so check the
-  service's current list. Several ids separated by commas are tried in order, which gives you a fallback.
-- A fast, inexpensive model is the right choice. A one-hour video is read in about four requests.
-- You pay the AI service directly for what you use. The **AI usage** page in the app shows how many requests and
-  tokens each video took.
-- Speech to text does not use the AI service. It runs on your own machine, so audio never leaves it.
+---
 
-### Finding clips by what is on screen (Vision)
+## 🧪 Running Tests
 
-For videos with no talking, or when the pictures matter more than the words. Press **Vision** in the add bar and switch
-it on. PeakCut takes small pictures from your video on this computer and asks your AI to pick the best moments; the video
-itself is never sent.
-
-- **Reference**: a video (silent, or with a voice), some words, or both, that shows how the clips should look: how fast it
-  cuts, what is on screen and, if it has a voice, the style of its voice-over. A reference is studied once and kept as a few
-  lines of text, so it costs almost nothing to reuse.
-- **Chop into parts**: a long video can be cut into parts (empty means about one per 8 minutes). Each part is its own
-  request, and more parts means more detail.
-- **How closely to look**: Saver, Balanced or Detailed (a frame every 8, 5 or 3 seconds). The page shows an estimate of the
-  tokens before anything is sent.
-- **Voice-over**: the AI writes it, in the reference's style, and a voice on this computer reads it over the clip. Download
-  the Kokoro voices once under **Settings → Voices** (about 330 MB), press ▶ to hear each one.
-- **Model for pictures** (Settings → AI, optional): the model asked when pictures are sent. It must be able to read images.
-
-### Videos in Arabic
-
-PeakCut hears English by default. To clip videos in Arabic, add the Arabic speech model once in
-**Settings → Speech models** (about 107 MB), or choose **Arabic** under Options when adding a video and PeakCut
-offers to download it. Set a creator's language on their Setup page so their live recordings use it too.
-It understands Modern Standard Arabic and everyday dialects, and the AI turns English words said in between
-back into English. Captions on the clips are in English.
-
-## Settings
-
-Everything is set through environment variables, normally in a `.env` file next to this README.
-[`.env.example`](.env.example) lists every setting with a short explanation. The ones that matter first:
-
-| Setting | What it is for |
-|---|---|
-| `PEAKCUT_AI_PROVIDER`, `PEAKCUT_AI_MODELS`, `PEAKCUT_AI_KEY` | The AI that picks clips and writes titles (or set it in the dashboard) |
-| `PEAKCUT_ACCOUNTS` | `1` makes everyone sign in. Use it on any server other people can reach |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional: Sign in with Google, and connecting YouTube |
-| `PEAKCUT_SMTP_*`, `PEAKCUT_MAIL_FROM` | Optional: confirmation and password emails |
-| `PEAKCUT_DATA` | Where videos, clips and the database are kept (default `./data`) |
-
-`.env`, the `secrets/` folder and all user data are ignored by git. Keep keys there, never in the code.
-
-## Admins
-
-This only matters with accounts switched on (`PEAKCUT_ACCOUNTS=1`); without them you are the owner and can do
-everything. An account is an admin only when the database says so. No email address is special in the code and no web request
-can change a role. Do it on the machine that runs PeakCut:
+To verify your environment and ensure all features pass:
 
 ```bash
-python -m studio.admin grant you@example.com
-```
+# Run quick static screen and video tests
+python tests/test_static.py
 
-`revoke` and `list` work the same way. The admin dashboard is at `/admin` and answers "not found" to everyone else.
-
-## How it is built
-
-| Part | What it is |
-|---|---|
-| `studio/` | The server: FastAPI, the clip pipeline, live recording, accounts |
-| `studio/ai.py` | The only file that talks to an AI service. Add a provider here |
-| `web/` | The pages: landing, sign-in, the app, the admin dashboard (plain HTML, CSS and JavaScript, no build step) |
-| `tests/` | Tests that run against a throwaway copy of the app |
-| `deploy/`, `Dockerfile`, `docker-compose.yml` | One-server deployment with PostgreSQL and automatic HTTPS |
-
-Video work is done with `ffmpeg` and `yt-dlp`. Speech is transcribed with `sherpa-onnx` and NVIDIA's Parakeet
-model (English) and FastConformer Arabic model, both released by NVIDIA under the Creative Commons Attribution 4.0
-licence (CC-BY-4.0). The Arabic model was converted for sherpa-onnx with `tools/export_arabic_model.py`.
-Data is kept per user: accounts in the database (SQLite on your own computer, PostgreSQL on a server), videos and
-clips in each user's own folder. [AGENTS.md](AGENTS.md) is a short map of the code for contributors and AI coding
-assistants.
-
-## Where your videos and clips are kept
-
-Everything PeakCut keeps is in one folder: videos, clips, recordings, creators, settings and the speech model. By
-default it is the `data` folder inside PeakCut. **Settings, Storage** shows the folder and how much room its drive
-has, opens it in one click, and lets you move it to another drive: choose the new folder, and PeakCut moves
-everything there the next time it starts. If the drive is nearly full, PeakCut says so and stops taking new videos
-until there is room. (`PEAKCUT_DATA` in `.env` still works and takes priority.)
-
-## Updating
-
-PeakCut checks GitHub once a minute while it runs. When a newer version is out, the dashboard shows a notice
-within a minute or two (no restart needed), with what changed
-and how to update: ask your AI coding assistant to do it (the notice has a sentence to paste), or run
-`git pull && pip install -r requirements.txt` in the PeakCut folder and restart it (with Docker:
-`git pull && docker compose up -d --build`). Your `.env`, keys and clips are not touched. Only the two commit ids
-are sent to GitHub; set `PEAKCUT_UPDATE_CHECK=0` to turn the check off.
-
-## Deploy
-
-[DEPLOY.md](DEPLOY.md) walks through a single server with Docker: the app, PostgreSQL, and Caddy for HTTPS.
-
-```bash
-docker compose up -d --build
-```
-
-## How it behaves under load
-
-- The page asks the server one small question every few seconds. When nothing has changed, the answer comes
-  straight from memory.
-- Each person's videos wait in their own line and the lines take turns, so one person cannot hold everyone up.
-- The server measures its own processor, memory and disk every second. Extra videos and recordings start only
-  while there is room, wait briefly when it is nearly full, and continue the moment it frees up.
-- There are no limits on upload size, video length, recordings, creators or storage unless you set them in
-  `.env`. Five videos can be sent at once. Request sizes are always capped, so junk can't fill the memory.
-
-## Tests
-
-```bash
+# Run full end-to-end integration test suite
 python tests/run.py
 ```
 
-This starts a copy of the app on a spare port with an empty temporary data folder, runs the permission, abuse and
-queue tests against it, then removes it. It needs no keys and never touches real data.
+---
 
-## Security
+## 📁 Project Structure
 
-- With sign-in off, PeakCut listens on this computer only (`127.0.0.1`), refuses changes sent by other websites,
-  and only answers to its own address. Do not expose it to the internet that way: turn accounts on.
-- Passwords are stored only as salted scrypt hashes. Sessions are random tokens stored hashed; cookies are HTTP-only.
-- Every route works out who is asking from the session, never from the request, so users only reach their own data.
-- Only known video sites are fetched, and text from videos is treated as data when it is shown to the AI.
-- Found a problem? Please report it privately through the repository's security advisories instead of opening a
-  public issue.
+| Directory / File | Description |
+|---|---|
+| `studio/server.py` | FastAPI web server, routes, streaming media endpoints, and security gate |
+| `studio/jobs.py` | Video processing pipeline, queue management, multi-trim segment validation |
+| `studio/render.py` | FFmpeg rendering engine: cutting, concat filters, speed transforms, word remapping, captions |
+| `studio/ai.py` | Unified client for AI providers (Gemini, OpenAI, Groq, Ollama, Claude) |
+| `studio/brain.py` | Clip detection prompts, title and hook generation |
+| `studio/vision.py` | Visual highlight detection and frame-grid generation |
+| `studio/transcribe.py` | Speech-to-text engine using Sherpa-ONNX |
+| `web/index.html` | Single-page UI with visual timeline, zoom, speed pills, and player preview |
+| `tests/` | Comprehensive test suite for permissions, clipping, audio, and limits |
 
-## Using it responsibly
+---
 
-Clip videos you made, or have permission to use. You are responsible for the rights to what you download, clip and
-post, and for following the terms of the sites you fetch from and post to.
+## 🛡️ License
 
-## Licence
-
-[MIT](LICENSE). Caption fonts in `studio/fonts/` (Anton, Archivo Black, Poppins) are under the SIL Open Font
-License; the licence texts are in the same folder.
+This project is licensed under the [MIT License](LICENSE).
+Caption fonts in `studio/fonts/` (Anton, Archivo Black, Poppins) are licensed under the SIL Open Font License.

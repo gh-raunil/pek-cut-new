@@ -1169,11 +1169,21 @@ def delete_my_account(request: Request, body: dict = Body(...)):
 
 @app.get("/media/{jid}/{name}")
 def media_file(jid: str, name: str, download: int = 0):
-    if not re.fullmatch(r"[\w\-]+\.(mp4|jpg)", name):
+    if not re.fullmatch(r"[\w\-\.]+\.(mp4|jpg|webm)", name) or ".." in name:
         raise HTTPException(404)
     job = _job_or_404(jid)
     f = Path(job["dir"]) / "clips" / name
     if not f.is_file():
+        f = Path(job["dir"]) / name
+    if not f.is_file() and name.startswith("source."):
+        if job.get("source_path") and Path(job["source_path"]).is_file():
+            f = Path(job["source_path"])
+        else:
+            for cand in Path(job["dir"]).glob("source.*"):
+                if cand.is_file() and cand.suffix.lower() in (".mp4", ".webm", ".mkv", ".mov"):
+                    f = cand
+                    break
+    if not f or not f.is_file():
         raise HTTPException(404)
     save_as = name
     if download and name.endswith(".mp4"):

@@ -634,12 +634,87 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .dlg-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 .dlg .seg{background:var(--muted)}
 .dlg .look .ot{margin:4px 0 8px}
-.editor{display:grid;grid-template-columns:minmax(240px,340px) minmax(300px,450px);max-height:calc(100vh - 48px)}
+.editor{display:grid;grid-template-columns:minmax(280px,360px) minmax(340px,490px);max-height:calc(100vh - 48px)}
 .editor .stage{background:#17110E;display:grid;place-items:center;position:relative;min-height:320px}
 .editor video,.editor .stage img{width:100%;max-height:calc(100vh - 48px);aspect-ratio:9/16;object-fit:contain;display:block}
 .editor .panel{padding:22px;overflow:auto;display:flex;flex-direction:column;gap:14px}
 .editor h3{font-size:13px;font-weight:600;color:var(--dim);margin-top:6px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ---------- timeline & stage */
+.tl-section{display:flex;flex-direction:column;gap:6px;margin:2px 0 6px}
+.tl-label-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.tl-label-row h3{margin:0;font-size:13px;font-weight:600;color:var(--dim)}
+.tl-zoom-ctrls{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--dim)}
+.tl-zoom-ctrls .sub{font-size:11px;color:var(--faint);margin-right:2px}
+.tl-btn-z{min-width:22px;height:22px;padding:0 6px;border-radius:5px;border:1px solid var(--line-2);background:var(--muted);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;display:grid;place-items:center}
+.tl-btn-z:hover{background:var(--line);color:var(--brand-ink)}
+.tl-btn-z.fit{font-size:10px;padding:0 7px;font-weight:700}
+.tl-z-val{min-width:32px;text-align:center;font-size:11px;font-weight:600;color:var(--dim);font-family:monospace}
+
+.tl-container{background:#FFFFFF;border:1px solid var(--line,#e2e8f0);border-radius:12px;padding:12px 14px 10px;display:flex;flex-direction:column;gap:8px;user-select:none;-webkit-user-select:none}
+.tl-header{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim,#666)}
+.tl-header b{color:var(--brand-ink,#18120e);font-family:monospace;font-size:12px}
+.tl-badge{background:var(--muted,#f3f4f6);color:var(--brand-ink,#18120e);font-weight:700;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid var(--line-2,#e5e7eb)}
+
+.tl-track-wrap{position:relative;width:100%;padding:4px 0}
+.tl-viewport{position:relative;width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.2) transparent;border-radius:8px;border:1px solid var(--line-2,#e5e7eb);background:#F8F9FA;touch-action:none}
+.tl-viewport::-webkit-scrollbar{height:6px}
+.tl-viewport::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.18);border-radius:3px}
+.tl-viewport::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.32)}
+
+.tl-track{position:relative;height:46px;min-width:100%;background:#F8F9FA;cursor:pointer;touch-action:none}
+.tl-ticks{position:absolute;inset:0;pointer-events:none}
+.tl-tick-item{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;transform:translateX(-50%);pointer-events:none}
+.tl-tick-line{width:1px;height:8px;background:rgba(0,0,0,0.18)}
+.tl-tick-time{font-size:9px;color:var(--dim,#666);font-family:monospace;line-height:1}
+
+.tl-dim{position:absolute;top:0;bottom:0;background:rgba(0,0,0,0.06);pointer-events:none;z-index:1}
+.tl-dim.left{left:0}
+.tl-dim.right{right:0}
+.tl-range{position:absolute;top:0;bottom:0;border:2px solid #18120e;border-radius:8px;background:transparent;box-sizing:border-box;cursor:grab;z-index:2;touch-action:none;overflow:hidden}
+.tl-range:active{cursor:grabbing}
+.tl-seg-blocks{position:absolute;inset:0;pointer-events:none;z-index:1}
+.tl-seg-block{position:absolute;top:0;bottom:0;box-sizing:border-box;pointer-events:none;transition:background-color .15s ease}
+.tl-seg-block.kept{background:rgba(255,229,0,0.28)}
+.tl-seg-block.deleted{background:repeating-linear-gradient(45deg,rgba(239,68,68,0.22),rgba(239,68,68,0.22) 5px,rgba(239,68,68,0.38) 5px,rgba(239,68,68,0.38) 10px);border-left:1px dashed #DC2626;border-right:1px dashed #DC2626}
+.tl-cut-divider{position:absolute;top:0;bottom:0;width:2px;background:#18120e;z-index:2;pointer-events:none}
+.tl-cut-divider::before{content:"✂";position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:9px;line-height:1}
+
+.tl-cut-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line-2,#e5e7eb)}
+.tl-cut-btns{display:flex;align-items:center;gap:6px}
+.tl-cut-btn{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--line-2,#d1d5db);background:var(--muted,#f3f4f6);color:var(--text,#111);font-size:11px;font-weight:600;cursor:pointer}
+.tl-cut-btn:hover{background:var(--line,#e5e7eb);color:var(--brand-ink,#000)}
+.tl-cut-btn.split{border-color:var(--brand,#FFE500);background:#FFFBE6}
+.tl-cut-btn.split:hover{background:#FFF3C4}
+.tl-seg-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.tl-seg-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:6px;font-size:11px;font-family:monospace;background:#FFFFFF;border:1px solid var(--line-2,#d1d5db);color:var(--text,#111);user-select:none;transition:all .15s ease}
+.tl-seg-chip.deleted{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
+.tl-seg-chip .seg-del{border:0;background:transparent;color:#DC2626;cursor:pointer;font-weight:700;font-size:11px;padding:0 3px;border-radius:3px}
+.tl-seg-chip .seg-del:hover{background:rgba(220,38,38,0.15)}
+.tl-seg-chip .seg-res{border:0;background:transparent;color:#16A34A;cursor:pointer;font-weight:700;font-size:11px;padding:0 3px;border-radius:3px}
+.tl-seg-chip .seg-res:hover{background:rgba(22,163,74,0.15)}
+.tl-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:34px;background:#FFFFFF;border:1.5px solid #18120e;border-radius:6px;cursor:ew-resize;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,0.15);z-index:3;touch-action:none}
+.tl-handle::after{content:"";width:2px;height:12px;background:#18120e;box-shadow:3px 0 0 #18120e,-3px 0 0 #18120e;border-radius:1px}
+.tl-handle.left{left:-8px}
+.tl-handle.right{right:-8px}
+.tl-playhead{position:absolute;top:0;bottom:0;width:3px;background:#FF8B33;box-shadow:0 0 0 1px rgba(0,0,0,0.2);z-index:4;pointer-events:none;transform:translateX(-50%)}
+.tl-progress-bar{position:relative;height:4px;background:var(--line,#e2e8f0);border-radius:2px;overflow:hidden;margin-top:5px}
+.tl-progress-fill{position:absolute;left:0;top:0;bottom:0;background:#FF8B33;border-radius:2px;width:0%;transition:width 0.05s linear}
+.tl-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--dim,#666);margin-top:2px}
+.tl-fine{display:flex;align-items:center;gap:3px}
+.tl-fine input{width:64px;padding:2px 4px;height:24px;border:1px solid var(--line-2,#d1d5db);border-radius:6px;background:#FFFFFF;color:var(--text,#111);font-size:11px;text-align:center;font-family:monospace}
+.tl-btn-step{min-width:24px;height:24px;padding:0 3px;display:grid;place-items:center;border-radius:5px;border:1px solid var(--line-2,#d1d5db);background:var(--muted,#f3f4f6);color:var(--text,#111);font-size:10px;cursor:pointer}
+.tl-btn-step:hover{background:var(--line,#e5e7eb);color:var(--brand-ink,#000)}
+
+.stage-wrap{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.stage-top-pill{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:6;pointer-events:auto}
+.stage-top-pill .badge{box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+.stage-speed-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;background:rgba(20,14,11,0.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.18);z-index:6;pointer-events:auto;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.stage-speed-bar .speed-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,0.7);margin-right:2px;margin-left:2px}
+.speed-pill{background:transparent;border:1px solid transparent;color:#FFFFFF;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;cursor:pointer;transition:all 0.15s ease;line-height:1.2}
+.speed-pill:hover{background:rgba(255,255,255,0.16);color:#FFFFFF}
+.speed-pill.on{background:var(--brand,#FFE500);color:#18120e;font-weight:700;border-color:rgba(0,0,0,0.15)}
 #toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:50}
 .toast{background:var(--frame);color:var(--frame-text);border:1px solid var(--frame-2);border-radius:var(--r);padding:12px 16px;max-width:380px;animation:rise .2s ease;display:flex;gap:10px;align-items:center;font-weight:500}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--brand);flex:none}
@@ -2788,7 +2863,24 @@ function drawClipDlg(full) {
   const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid), dlg = $("#clipdlg");
   if (!c) { if (dlg.open) dlg.close(); return; }
   const m = `/media/${j.id}/`, sig = c.status + c.version + (c.cancel ? "x" : "");
-  const stage = c.status === "done" ? `<video src="${m}${esc(c.file)}?v=${c.version}" poster="${m}${esc(c.cover)}?v=${c.version}" controls autoplay playsinline></video>`
+  const stage = c.status === "done" ? `<div class="stage-wrap">
+      <div class="stage-top-pill">
+        <span class="badge ${scoreCls(c.score)}" id="stage_badge">Rendered (9:16)</span>
+        <button type="button" class="btn sm ghost" id="stage_toggle_btn" style="background:rgba(20,14,11,0.7);backdrop-filter:blur(4px);color:#fff">${ic("play")}Review range in full video</button>
+      </div>
+      <video id="stage_video" src="${m}${esc(c.file)}?v=${c.version}" poster="${m}${esc(c.cover)}?v=${c.version}" controls playsinline preload="auto"></video>
+      <div class="stage-speed-bar" id="stage_speed_bar">
+        <span class="speed-lbl">Speed:</span>
+        <button type="button" class="speed-pill" data-speed="-2" title="Fast rewind (-2x)">-2x</button>
+        <button type="button" class="speed-pill" data-speed="-1" title="Rewind (-1x)">-1x</button>
+        <button type="button" class="speed-pill" data-speed="0.5" title="Slow motion (0.5x)">.5x</button>
+        <button type="button" class="speed-pill" data-speed="0.75" title="0.75x">.75x</button>
+        <button type="button" class="speed-pill ${c.speed == null || c.speed === 1 ? "on" : ""}" data-speed="1" title="Normal speed (1x)">1x</button>
+        <button type="button" class="speed-pill ${c.speed === 1.25 ? "on" : ""}" data-speed="1.25" title="1.25x">1.25x</button>
+        <button type="button" class="speed-pill ${c.speed === 1.5 ? "on" : ""}" data-speed="1.5" title="1.5x">1.5x</button>
+        <button type="button" class="speed-pill ${c.speed === 2 ? "on" : ""}" data-speed="2" title="Double speed (2x)">2x</button>
+      </div>
+    </div>`
     : c.status === "error" ? `<div class="err" style="padding:20px;text-align:center">${esc(c.error || "Could not make this clip.")}</div>`
     : `<span class="making">${c.cancel ? "Cancelling…" : c.status === "rendering" ? "Making this clip…" : "Waiting its turn…"}</span>${c.cancel ? "" : `<button class="btn" data-act="cancelclip" data-j="${j.id}" data-c="${esc(c.id)}" style="margin-top:14px">${ic("x")}Cancel</button>`}`;
   if (full) {
@@ -2802,8 +2894,85 @@ function drawClipDlg(full) {
         <label class="sw"><input type="checkbox" data-f="captions" data-caption-toggle ${c.captions === false ? "" : "checked"}>Generate captions</label>
         <div class="two"><label class="f">Caption style<select data-f="style" data-caption-style ${c.captions === false ? "disabled" : ""}>${opts(S.status.styles, c.style)}</select></label>
           <label class="f">Layout<select data-f="layout">${opts(S.status.layouts, c.layout)}</select></label></div>
-        <div class="two"><label class="f">Start (seconds)<input data-f="start" type="number" step="0.5" value="${c.start}"></label>
-          <label class="f">End (seconds)<input data-f="end" type="number" step="0.5" value="${c.end}"></label></div>
+        <div class="two" style="margin-top:2px">
+          <label class="f">Video speed
+            <select data-f="speed" id="clip_speed_select">
+              <option value="-2" ${c.speed === -2 ? "selected" : ""}>-2x (Fast rewind)</option>
+              <option value="-1" ${c.speed === -1 ? "selected" : ""}>-1x (Rewind)</option>
+              <option value="0.5" ${c.speed === 0.5 ? "selected" : ""}>0.5x (Slow motion)</option>
+              <option value="0.75" ${c.speed === 0.75 ? "selected" : ""}>0.75x</option>
+              <option value="1" ${c.speed == null || c.speed === 1 ? "selected" : ""}>1x (Normal)</option>
+              <option value="1.25" ${c.speed === 1.25 ? "selected" : ""}>1.25x</option>
+              <option value="1.5" ${c.speed === 1.5 ? "selected" : ""}>1.5x (Fast)</option>
+              <option value="2" ${c.speed === 2 ? "selected" : ""}>2x (Double speed)</option>
+            </select>
+          </label>
+        </div>
+        <div class="tl-section">
+          <div class="tl-label-row">
+            <h3>Clip timeline</h3>
+            <div class="tl-zoom-ctrls">
+              <span class="sub">Ctrl+Scroll to zoom</span>
+              <button type="button" class="tl-btn-z" id="tl_z_out" title="Zoom out">-</button>
+              <span class="tl-z-val" id="tl_z_val">1.0x</span>
+              <button type="button" class="tl-btn-z" id="tl_z_in" title="Zoom in">+</button>
+              <button type="button" class="tl-btn-z fit" id="tl_z_fit" title="Fit to selection">Fit</button>
+            </div>
+          </div>
+          <div class="tl-container" id="tl_box">
+            <div class="tl-header">
+              <span>Start: <b id="tl_start_lbl">${fmt(c.start)}</b></span>
+              <span class="tl-badge" id="tl_dur">${(c.end - c.start).toFixed(1)}s</span>
+              <span>End: <b id="tl_end_lbl">${fmt(c.end)}</b></span>
+            </div>
+            <div class="tl-track-wrap">
+              <div class="tl-viewport" id="tl_viewport">
+                <div class="tl-track" id="tl_track">
+                  <div class="tl-ticks" id="tl_ticks"></div>
+                  <div class="tl-dim left" id="tl_dim_l"></div>
+                  <div class="tl-range" id="tl_range">
+                    <div class="tl-seg-blocks" id="tl_seg_blocks"></div>
+                    <div class="tl-handle left" id="tl_h_left" title="Drag to adjust start"></div>
+                    <div class="tl-playhead" id="tl_playhead"></div>
+                    <div class="tl-handle right" id="tl_h_right" title="Drag to adjust end"></div>
+                  </div>
+                  <div class="tl-dim right" id="tl_dim_r"></div>
+                </div>
+              </div>
+              <div class="tl-progress-bar"><div class="tl-progress-fill" id="tl_prog"></div></div>
+            </div>
+            <div class="tl-cut-bar" id="tl_cut_bar">
+              <div class="tl-cut-btns">
+                <button type="button" class="tl-cut-btn split" id="tl_split_btn" title="Split clip at the current playhead position">
+                  ${ic("scissors")}Split at <b id="tl_split_t_lbl" style="font-family:monospace">${fmt(c.start)}</b>
+                </button>
+                <button type="button" class="tl-cut-btn" id="tl_reset_cuts_btn" title="Clear all cuts and restore full range">
+                  Reset cuts
+                </button>
+              </div>
+              <span class="sub" id="tl_kept_lbl" style="font-size:11px">Kept: <b>${(c.end - c.start).toFixed(1)}s</b></span>
+            </div>
+            <div class="tl-seg-list" id="tl_seg_list"></div>
+            <input type="hidden" data-f="segments" id="tl_in_segments" value="${esc(JSON.stringify(c.segments || []))}">
+            <div class="tl-footer">
+              <div class="tl-fine">
+                <button type="button" class="tl-btn-step" data-step-s="-1" title="-1s">-1s</button>
+                <button type="button" class="tl-btn-step" data-step-s="-0.1" title="-0.1s">-.1s</button>
+                <input data-f="start" id="tl_in_start" type="number" step="0.1" value="${c.start}">
+                <button type="button" class="tl-btn-step" data-step-s="0.1" title="+0.1s">+.1s</button>
+                <button type="button" class="tl-btn-step" data-step-s="1" title="+1s">+1s</button>
+              </div>
+              <span style="font-size:11px;opacity:0.75" id="tl_total_lbl">Total ${fmt(j.duration || c.end)}</span>
+              <div class="tl-fine">
+                <button type="button" class="tl-btn-step" data-step-e="-1" title="-1s">-1s</button>
+                <button type="button" class="tl-btn-step" data-step-e="-0.1" title="-0.1s">-.1s</button>
+                <input data-f="end" id="tl_in_end" type="number" step="0.1" value="${c.end}">
+                <button type="button" class="tl-btn-step" data-step-e="0.1" title="+0.1s">+.1s</button>
+                <button type="button" class="tl-btn-step" data-step-e="1" title="+1s">+1s</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="row" style="justify-content:space-between;align-items:center"><h3>Post text</h3>
           <button class="btn sm" data-act="writetext">Write again with AI</button></div>
         <label class="f">Title<input data-f="title" value="${esc(c.title)}"></label>
@@ -2819,9 +2988,657 @@ function drawClipDlg(full) {
           ${c.status === "done" ? `<a class="btn" href="${m}${esc(c.file)}?download=1">${ic("down")}Download</a>` : ""}
           <button class="btn" data-act="copy" data-j="${j.id}" data-c="${esc(c.id)}">${ic("copy")}Copy post text</button></div>
       </div></div>`;
+    initTimeline(j, c);
   } else if (D.sig !== sig) $("#stage").innerHTML = stage;
   D.sig = sig;
   put($("#dposts"), postPills(c));
+}
+
+function initTimeline(j, c) {
+  const box = $("#tl_box");
+  if (!box) return;
+  const viewport = $("#tl_viewport");
+  const track = $("#tl_track");
+  const ticks = $("#tl_ticks");
+  const range = $("#tl_range");
+  const hLeft = $("#tl_h_left");
+  const hRight = $("#tl_h_right");
+  const playhead = $("#tl_playhead");
+  const progFill = $("#tl_prog");
+  const dimL = $("#tl_dim_l");
+  const dimR = $("#tl_dim_r");
+  const durLbl = $("#tl_dur");
+  const startLbl = $("#tl_start_lbl");
+  const endLbl = $("#tl_end_lbl");
+  const inStart = $("#tl_in_start");
+  const inEnd = $("#tl_in_end");
+  const stageVideo = $("#stage_video");
+  const stageBadge = $("#stage_badge");
+  const stageToggleBtn = $("#stage_toggle_btn");
+  const zVal = $("#tl_z_val");
+  const zIn = $("#tl_z_in");
+  const zOut = $("#tl_z_out");
+  const zFit = $("#tl_z_fit");
+
+  const totalDur = Math.max(Number(j.duration) || 0, c.src_end || 0, c.end || 0, 60);
+  const minTime = c.src_offset != null ? c.src_offset : 0;
+  const maxTime = c.src_end != null ? c.src_end : totalDur;
+  const span = Math.max(1, maxTime - minTime);
+
+  let start = Math.max(minTime, Math.min(maxTime - 3, Number(inStart?.value) || c.start));
+  let end = Math.min(maxTime, Math.max(start + 3, Number(inEnd?.value) || c.end));
+  let isReview = false;
+  let isLoop = true;
+  let dragType = null;
+  let startX = 0;
+  let initStart = 0;
+  let initEnd = 0;
+  let zoom = 1.0;
+
+  // Video Speed Controller (-2x, -1x, 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x)
+  const speedSelect = $("#clip_speed_select");
+  const speedPills = document.querySelectorAll(".speed-pill");
+  let currentSpeed = Number(c.speed) || 1.0;
+  let reverseTimer = null;
+
+  // Multi-trim & Cut Segments State
+  let segments = [];
+  let nextSegId = 1;
+  const inSegments = $("#tl_in_segments");
+  const segBlocksWrap = $("#tl_seg_blocks");
+  const segListWrap = $("#tl_seg_list");
+  const splitBtn = $("#tl_split_btn");
+  const splitTLbl = $("#tl_split_t_lbl");
+  const resetCutsBtn = $("#tl_reset_cuts_btn");
+  const keptLbl = $("#tl_kept_lbl");
+
+  let parsedSegs = null;
+  try {
+    if (inSegments?.value) parsedSegs = JSON.parse(inSegments.value);
+  } catch {}
+  if (!parsedSegs && Array.isArray(c.segments)) parsedSegs = c.segments;
+
+  if (Array.isArray(parsedSegs) && parsedSegs.length > 1) {
+    let prevE = null;
+    parsedSegs.forEach(pair => {
+      const s0 = Math.round(Number(pair[0]) * 100) / 100;
+      const s1 = Math.round(Number(pair[1]) * 100) / 100;
+      if (prevE != null && s0 > prevE + 0.1) {
+        segments.push({ id: nextSegId++, start: prevE, end: s0, deleted: true });
+      }
+      segments.push({ id: nextSegId++, start: s0, end: s1, deleted: false });
+      prevE = s1;
+    });
+  } else {
+    segments = [{ id: nextSegId++, start: start, end: end, deleted: false }];
+  }
+
+  function renderSegments() {
+    const rangeSpan = Math.max(0.1, end - start);
+    if (segBlocksWrap) {
+      let bHtml = "";
+      segments.forEach((s, idx) => {
+        const lPct = Math.max(0, Math.min(100, ((s.start - start) / rangeSpan) * 100));
+        const rPct = Math.max(0, Math.min(100, ((s.end - start) / rangeSpan) * 100));
+        const wPct = Math.max(0, rPct - lPct);
+        const cls = s.deleted ? "deleted" : "kept";
+        bHtml += `<div class="tl-seg-block ${cls}" style="left:${lPct}%;width:${wPct}%;" title="${s.deleted ? 'Cut: ' : 'Kept: '}${fmt(s.start)}–${fmt(s.end)}"></div>`;
+        if (idx > 0) {
+          bHtml += `<div class="tl-cut-divider" style="left:${lPct}%;"></div>`;
+        }
+      });
+      segBlocksWrap.innerHTML = bHtml;
+    }
+
+    if (segListWrap) {
+      let listHtml = "";
+      let partNum = 1;
+      segments.forEach((s) => {
+        const dur = Math.max(0, s.end - s.start);
+        if (s.deleted) {
+          listHtml += `<div class="tl-seg-chip deleted" data-seg-id="${s.id}">
+            <span><strike>Cut: ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</strike></span>
+            <button type="button" class="seg-res" data-act-res="${s.id}" title="Restore this cut part">↺ Restore</button>
+          </div>`;
+        } else {
+          listHtml += `<div class="tl-seg-chip" data-seg-id="${s.id}">
+            <span><b>Part ${partNum++}:</b> ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</span>
+            <button type="button" class="seg-del" data-act-del="${s.id}" title="Delete this part from clip">✕ Delete</button>
+          </div>`;
+        }
+      });
+      segListWrap.innerHTML = listHtml;
+    }
+
+    const keptSegs = segments.filter(s => !s.deleted);
+    const keptDur = keptSegs.reduce((acc, s) => acc + (s.end - s.start), 0);
+    const cutCount = segments.filter(s => s.deleted).length;
+    if (durLbl) {
+      durLbl.innerHTML = cutCount > 0 ? `${keptDur.toFixed(1)}s <small style="font-weight:normal;opacity:0.75">(${cutCount} cut)</small>` : `${keptDur.toFixed(1)}s`;
+    }
+    if (keptLbl) {
+      keptLbl.innerHTML = cutCount > 0 ? `Kept: <b>${keptDur.toFixed(1)}s</b> (${cutCount} part${cutCount>1?'s':''} cut out)` : `Kept: <b>${keptDur.toFixed(1)}s</b> (full clip)`;
+    }
+    if (inSegments) {
+      inSegments.value = cutCount > 0 ? JSON.stringify(keptSegs.map(s => [Math.round(s.start * 100) / 100, Math.round(s.end * 100) / 100])) : "";
+    }
+  }
+
+  function splitAt(t) {
+    t = Math.round(t * 100) / 100;
+    const target = segments.find(s => !s.deleted && t >= s.start + 0.4 && t <= s.end - 0.4);
+    if (!target) {
+      toast("Scrub the playhead inside a kept part (at least 0.4s from edges) to split", "bad");
+      return;
+    }
+    const idx = segments.indexOf(target);
+    const s1 = { id: nextSegId++, start: target.start, end: t, deleted: false };
+    const s2 = { id: nextSegId++, start: t, end: target.end, deleted: false };
+    segments.splice(idx, 1, s1, s2);
+    renderSegments();
+    toast(`Split clip at ${fmt(t)}. Click '✕ Delete' on the part you want to remove.`, "ok");
+  }
+
+  function deleteSegment(id) {
+    const seg = segments.find(s => s.id === id);
+    if (!seg) return;
+    const keptCount = segments.filter(s => !s.deleted).length;
+    if (keptCount <= 1) {
+      toast("You cannot delete all parts. At least one part must remain in the clip.", "bad");
+      return;
+    }
+    seg.deleted = true;
+    renderSegments();
+    toast(`Deleted ${fmt(seg.start)} – ${fmt(seg.end)}. This part is cut out!`, "ok");
+    checkCutSkip(stageVideo ? stageVideo.currentTime : start);
+  }
+
+  function restoreSegment(id) {
+    const seg = segments.find(s => s.id === id);
+    if (!seg) return;
+    seg.deleted = false;
+    renderSegments();
+    toast(`Restored ${fmt(seg.start)} – ${fmt(seg.end)}.`, "ok");
+  }
+
+  function checkCutSkip(currTime) {
+    if (!isReview || !stageVideo) return currTime;
+    const del = segments.find(s => s.deleted && currTime >= s.start - 0.05 && currTime < s.end);
+    if (del) {
+      const nextKept = segments.find(s => !s.deleted && s.start >= del.end - 0.05);
+      if (nextKept) {
+        stageVideo.currentTime = nextKept.start;
+        return nextKept.start;
+      } else {
+        const firstKept = segments.find(s => !s.deleted);
+        if (firstKept) {
+          if (isLoop) {
+            stageVideo.currentTime = firstKept.start;
+            return firstKept.start;
+          } else {
+            stageVideo.pause();
+            stageVideo.currentTime = firstKept.start;
+            return firstKept.start;
+          }
+        }
+      }
+    }
+    return currTime;
+  }
+
+  function setSpeed(sp) {
+    currentSpeed = Number(sp) || 1.0;
+    if (speedSelect && speedSelect.value !== String(currentSpeed)) speedSelect.value = String(currentSpeed);
+    speedPills.forEach(p => p.classList.toggle("on", Number(p.dataset.speed) === currentSpeed));
+
+    if (reverseTimer) {
+      cancelAnimationFrame(reverseTimer);
+      reverseTimer = null;
+    }
+    if (!stageVideo) return;
+
+    if (currentSpeed > 0) {
+      stageVideo.playbackRate = currentSpeed;
+      if (stageVideo.paused) stageVideo.play().catch(() => {});
+    } else {
+      stageVideo.pause();
+      const mult = Math.abs(currentSpeed);
+      let lastT = performance.now();
+
+      function reverseStep(now) {
+        if (currentSpeed >= 0) return;
+        const dt = (now - lastT) / 1000;
+        lastT = now;
+        if (stageVideo) {
+          let nt = stageVideo.currentTime - (dt * mult);
+          if (isReview) {
+            const del = segments.find(s => s.deleted && nt <= s.end && nt >= s.start);
+            if (del) {
+              const prevKept = [...segments].reverse().find(s => !s.deleted && s.end <= del.start + 0.05);
+              if (prevKept) nt = prevKept.end;
+            }
+            if (nt <= start) {
+              if (isLoop) nt = end;
+              else {
+                stageVideo.currentTime = start;
+                updateVisuals(start);
+                return;
+              }
+            }
+          } else {
+            if (nt <= 0) nt = stageVideo.duration || 0;
+          }
+          stageVideo.currentTime = nt;
+          updateVisuals(nt);
+        }
+        reverseTimer = requestAnimationFrame(reverseStep);
+      }
+      reverseTimer = requestAnimationFrame(reverseStep);
+    }
+  }
+
+  speedPills.forEach(p => {
+    p.onclick = () => setSpeed(p.dataset.speed);
+  });
+  if (speedSelect) {
+    speedSelect.onchange = () => setSpeed(speedSelect.value);
+  }
+
+  const toPct = t => Math.max(0, Math.min(100, ((t - minTime) / span) * 100));
+  const fromPct = p => minTime + (Math.max(0, Math.min(100, p)) / 100) * span;
+
+  function renderTicks() {
+    if (!ticks) return;
+    const effectiveSpanInView = span / zoom;
+    let step = 60;
+    if (effectiveSpanInView > 1200) step = 300;
+    else if (effectiveSpanInView > 600) step = 120;
+    else if (effectiveSpanInView > 300) step = 60;
+    else if (effectiveSpanInView > 120) step = 30;
+    else if (effectiveSpanInView > 60) step = 15;
+    else if (effectiveSpanInView > 30) step = 5;
+    else if (effectiveSpanInView > 10) step = 2;
+    else step = 1;
+
+    let html = "";
+    const first = Math.ceil(minTime / step) * step;
+    for (let t = first; t <= maxTime; t += step) {
+      const p = toPct(t);
+      html += `<div class="tl-tick-item" style="left:${p}%">
+        <span class="tl-tick-line"></span>
+        <span class="tl-tick-time">${fmt(t)}</span>
+      </div>`;
+    }
+    ticks.innerHTML = html;
+  }
+
+  function applyZoom(newZoom, anchorClientX) {
+    newZoom = Math.max(1.0, Math.min(30.0, Math.round(newZoom * 100) / 100));
+    if (!viewport || !track) return;
+    const vRect = viewport.getBoundingClientRect();
+    const mouseX = (anchorClientX != null ? anchorClientX : (vRect.left + vRect.width / 2)) - vRect.left;
+    const oldScroll = viewport.scrollLeft;
+    const oldTrackW = track.offsetWidth || vRect.width;
+    const timeAtAnchor = minTime + ((oldScroll + mouseX) / oldTrackW) * span;
+
+    zoom = newZoom;
+    track.style.width = (zoom * 100) + "%";
+    if (zVal) zVal.textContent = zoom.toFixed(1) + "x";
+
+    const newTrackW = track.offsetWidth || (vRect.width * zoom);
+    const newOffset = ((timeAtAnchor - minTime) / span) * newTrackW;
+    viewport.scrollLeft = Math.max(0, newOffset - mouseX);
+
+    renderTicks();
+    updateVisuals();
+  }
+
+  // Ctrl + Wheel to Zoom
+  if (viewport) {
+    viewport.addEventListener("wheel", e => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.25 : 0.8;
+        applyZoom(zoom * factor, e.clientX);
+      }
+    }, { passive: false });
+  }
+
+  if (zIn) zIn.onclick = () => applyZoom(zoom * 1.35);
+  if (zOut) zOut.onclick = () => applyZoom(zoom / 1.35);
+  if (zFit) {
+    zFit.onclick = () => {
+      const clipSpan = Math.max(3, end - start);
+      const targetZ = Math.max(1.0, Math.min(30.0, (span / clipSpan) * 0.55));
+      applyZoom(targetZ, viewport ? viewport.getBoundingClientRect().left + viewport.clientWidth / 2 : null);
+      setTimeout(() => {
+        if (!viewport || !track) return;
+        const centerT = start + clipSpan / 2;
+        const centerPos = ((centerT - minTime) / span) * track.offsetWidth;
+        viewport.scrollLeft = Math.max(0, centerPos - viewport.clientWidth / 2);
+      }, 30);
+    };
+  }
+
+  function updateVisuals(currTime) {
+    const lPct = toPct(start);
+    const rPct = toPct(end);
+    const wPct = Math.max(0, rPct - lPct);
+
+    if (dimL) dimL.style.width = lPct + "%";
+    if (range) {
+      range.style.left = lPct + "%";
+      range.style.width = wPct + "%";
+    }
+    if (dimR) dimR.style.width = (100 - rPct) + "%";
+
+    const dur = Math.max(0, end - start);
+    if (durLbl) durLbl.textContent = dur.toFixed(1) + "s";
+    if (startLbl) startLbl.textContent = fmt(start);
+    if (endLbl) endLbl.textContent = fmt(end);
+
+    if (inStart && inStart !== document.activeElement) inStart.value = start.toFixed(2);
+    if (inEnd && inEnd !== document.activeElement) inEnd.value = end.toFixed(2);
+
+    const ct = currTime != null ? currTime : (stageVideo ? stageVideo.currentTime : start);
+    if (splitTLbl) splitTLbl.textContent = fmt(ct);
+    if (playhead) {
+      const phRelPct = dur > 0 ? Math.max(0, Math.min(100, ((ct - start) / dur) * 100)) : 0;
+      playhead.style.left = phRelPct + "%";
+    }
+
+    if (progFill) {
+      const progRelPct = dur > 0 ? Math.max(0, Math.min(100, ((ct - start) / dur) * 100)) : 0;
+      progFill.style.left = lPct + "%";
+      progFill.style.width = ((wPct * progRelPct) / 100) + "%";
+    }
+
+    if (isReview && stageBadge) {
+      const cutCount = segments.filter(s => s.deleted).length;
+      const keptDur = segments.filter(s => !s.deleted).reduce((acc, s) => acc + (s.end - s.start), 0);
+      stageBadge.className = "badge ok";
+      stageBadge.textContent = `Review: ${fmt(start)} – ${fmt(end)} (${keptDur.toFixed(1)}s${cutCount > 0 ? `, ${cutCount} cut` : ""})`;
+    }
+    renderSegments();
+  }
+
+  function setTimes(newStart, newEnd, seekVideo = true) {
+    newStart = Math.round(newStart * 100) / 100;
+    newEnd = Math.round(newEnd * 100) / 100;
+    if (newEnd - newStart < 3) {
+      if (newStart !== start) newStart = Math.max(minTime, newEnd - 3);
+      else newEnd = Math.min(maxTime, newStart + 3);
+    }
+    if (newEnd - newStart > 180) {
+      if (newStart !== start) newStart = newEnd - 180;
+      else newEnd = newStart + 180;
+    }
+    start = Math.max(minTime, Math.min(maxTime - 3, newStart));
+    end = Math.min(maxTime, Math.max(start + 3, newEnd));
+
+    if (segments.length === 1) {
+      segments[0].start = start;
+      segments[0].end = end;
+    } else if (segments.length > 1) {
+      segments[0].start = start;
+      segments[segments.length - 1].end = end;
+    }
+
+    updateVisuals(start);
+
+    if (seekVideo) {
+      switchToReview(start, true);
+    }
+  }
+
+  function switchToReview(seekTime, autoplay = false) {
+    if (!stageVideo) return;
+    const srcUrl = `/media/${j.id}/source.mp4`;
+    if (!isReview || stageVideo.dataset.mode !== "review") {
+      isReview = true;
+      stageVideo.dataset.mode = "review";
+      if (!stageVideo.src.includes(srcUrl)) {
+        stageVideo.src = srcUrl;
+        stageVideo.load();
+      }
+      if (stageToggleBtn) stageToggleBtn.innerHTML = `${ic("film")}Rendered clip (9:16)`;
+      if (stageBadge) {
+        stageBadge.className = "badge ok";
+        stageBadge.textContent = `Review: ${fmt(start)} – ${fmt(end)}`;
+      }
+    }
+    const t = seekTime != null ? seekTime : start;
+    stageVideo.currentTime = t;
+    updateVisuals(t);
+    if (autoplay) {
+      if (currentSpeed > 0) {
+        stageVideo.playbackRate = currentSpeed;
+        stageVideo.play().catch(() => {});
+      } else {
+        setSpeed(currentSpeed);
+      }
+    }
+  }
+
+  function switchToRendered() {
+    if (!stageVideo) return;
+    isReview = false;
+    stageVideo.dataset.mode = "rendered";
+    stageVideo.src = `/media/${j.id}/${esc(c.file)}?v=${c.version}`;
+    stageVideo.currentTime = 0;
+    stageVideo.load();
+    if (stageToggleBtn) stageToggleBtn.innerHTML = `${ic("play")}Review range in full video`;
+    if (stageBadge) {
+      stageBadge.className = `badge ${scoreCls(c.score)}`;
+      stageBadge.textContent = "Rendered (9:16)";
+    }
+    if (currentSpeed > 0) {
+      stageVideo.playbackRate = currentSpeed;
+    } else {
+      setSpeed(currentSpeed);
+    }
+    updateVisuals(start);
+  }
+
+  if (stageToggleBtn) {
+    stageToggleBtn.onclick = () => {
+      if (isReview) switchToRendered();
+      else switchToReview(start, true);
+    };
+  }
+
+  if (stageVideo) {
+    stageVideo.ontimeupdate = () => {
+      if (isReview) {
+        let ct = stageVideo.currentTime;
+        ct = checkCutSkip(ct);
+        if (ct >= end) {
+          const firstKept = segments.find(s => !s.deleted);
+          const tStart = firstKept ? firstKept.start : start;
+          if (isLoop) {
+            stageVideo.currentTime = tStart;
+          } else {
+            stageVideo.pause();
+            stageVideo.currentTime = tStart;
+          }
+        } else if (ct < start - 0.5) {
+          const firstKept = segments.find(s => !s.deleted);
+          stageVideo.currentTime = firstKept ? firstKept.start : start;
+        }
+      }
+      updateVisuals(stageVideo.currentTime);
+    };
+  }
+
+  let initSegments = null;
+  function onPointerDown(e, type) {
+    dragType = type;
+    startX = e.clientX;
+    initStart = start;
+    initEnd = end;
+    initSegments = segments.map(s => ({ ...s }));
+    if (e.target.setPointerCapture) {
+      try { e.target.setPointerCapture(e.pointerId); } catch {}
+    }
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!dragType) return;
+    const rect = track.getBoundingClientRect();
+    const dx = e.clientX - startX;
+    const dt = (dx / rect.width) * span;
+
+    if (dragType === "left") {
+      let ns = Math.max(minTime, Math.min(initEnd - 3, initStart + dt));
+      if (initEnd - ns > 180) ns = initEnd - 180;
+      setTimes(ns, initEnd, false);
+      if (stageVideo) {
+        if (!isReview) switchToReview(start, false);
+        stageVideo.currentTime = start;
+      }
+    } else if (dragType === "right") {
+      let ne = Math.min(maxTime, Math.max(initStart + 3, initEnd + dt));
+      if (ne - initStart > 180) ne = initStart + 180;
+      setTimes(initStart, ne, false);
+      if (stageVideo) {
+        if (!isReview) switchToReview(end, false);
+        stageVideo.currentTime = end;
+      }
+    } else if (dragType === "range") {
+      const dur = initEnd - initStart;
+      let ns = initStart + dt;
+      if (ns < minTime) ns = minTime;
+      if (ns + dur > maxTime) ns = maxTime - dur;
+      const actualDt = ns - initStart;
+      setTimes(ns, ns + dur, false);
+      if (initSegments) {
+        segments.forEach((s, idx) => {
+          if (initSegments[idx]) {
+            s.start = Math.round((initSegments[idx].start + actualDt) * 100) / 100;
+            s.end = Math.round((initSegments[idx].end + actualDt) * 100) / 100;
+          }
+        });
+        renderSegments();
+      }
+      if (stageVideo) {
+        if (!isReview) switchToReview(ns, false);
+        stageVideo.currentTime = ns;
+      }
+    }
+
+    if (viewport) {
+      const vRect = viewport.getBoundingClientRect();
+      if (e.clientX < vRect.left + 35) {
+        viewport.scrollLeft -= 8;
+      } else if (e.clientX > vRect.right - 35) {
+        viewport.scrollLeft += 8;
+      }
+    }
+  }
+
+  function onPointerUp(e) {
+    if (dragType) {
+      if (e.target && e.target.releasePointerCapture) {
+        try { e.target.releasePointerCapture(e.pointerId); } catch {}
+      }
+      dragType = null;
+      if (isReview && stageVideo) {
+        stageVideo.currentTime = start;
+        stageVideo.play().catch(() => {});
+      }
+    }
+  }
+
+  hLeft?.addEventListener("pointerdown", e => onPointerDown(e, "left"));
+  hRight?.addEventListener("pointerdown", e => onPointerDown(e, "right"));
+  range?.addEventListener("pointerdown", e => {
+    if (e.target === hLeft || e.target === hRight) return;
+    onPointerDown(e, "range");
+  });
+
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+
+  const cleanup = () => {
+    if (reverseTimer) { cancelAnimationFrame(reverseTimer); reverseTimer = null; }
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    $("#clipdlg")?.removeEventListener("close", cleanup);
+  };
+  $("#clipdlg")?.addEventListener("close", cleanup);
+
+  track?.addEventListener("click", e => {
+    if (e.target === hLeft || e.target === hRight || e.target === range || dragType) return;
+    const rect = track.getBoundingClientRect();
+    const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
+    const clickTime = fromPct(clickPct);
+    switchToReview(clickTime, true);
+  });
+
+  box.querySelectorAll("[data-step-s]").forEach(btn => {
+    btn.onclick = () => {
+      const step = Number(btn.dataset.stepS);
+      setTimes(start + step, end, true);
+    };
+  });
+  box.querySelectorAll("[data-step-e]").forEach(btn => {
+    btn.onclick = () => {
+      const step = Number(btn.dataset.stepE);
+      setTimes(start, end + step, true);
+    };
+  });
+
+  if (inStart) {
+    inStart.onchange = () => setTimes(Number(inStart.value), end, true);
+  }
+  if (inEnd) {
+    inEnd.onchange = () => setTimes(start, Number(inEnd.value), true);
+  }
+
+  if (splitBtn) {
+    splitBtn.onclick = () => {
+      const ct = stageVideo ? stageVideo.currentTime : start;
+      splitAt(ct);
+    };
+  }
+  if (resetCutsBtn) {
+    resetCutsBtn.onclick = () => {
+      segments = [{ id: nextSegId++, start: start, end: end, deleted: false }];
+      renderSegments();
+      toast("All cuts reset. Full range restored.", "ok");
+    };
+  }
+  if (segListWrap) {
+    segListWrap.onclick = e => {
+      const delBtn = e.target.closest("[data-act-del]");
+      if (delBtn) return deleteSegment(Number(delBtn.dataset.actDel));
+      const resBtn = e.target.closest("[data-act-res]");
+      if (resBtn) return restoreSegment(Number(resBtn.dataset.actRes));
+      const chip = e.target.closest(".tl-seg-chip");
+      if (chip) {
+        const seg = segments.find(s => s.id === Number(chip.dataset.segId));
+        if (seg) switchToReview(seg.start, true);
+      }
+    };
+  }
+
+  renderTicks();
+  renderSegments();
+  updateVisuals(start);
+
+  // If video is long relative to clip, automatically provide a comfortable zoom & scroll
+  if (span / (end - start) > 8) {
+    const targetZ = Math.max(1.0, Math.min(10.0, (span / (end - start)) * 0.45));
+    applyZoom(targetZ, null);
+    setTimeout(() => {
+      if (!viewport || !track) return;
+      const centerT = start + (end - start) / 2;
+      const centerPos = ((centerT - minTime) / span) * track.offsetWidth;
+      viewport.scrollLeft = Math.max(0, centerPos - viewport.clientWidth / 2);
+    }, 40);
+  }
 }
 function postText() {   // the post text as it is in the clip editor right now
   const v = k => $(`#clipdlg [data-f="${k}"]`).value;

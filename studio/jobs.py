@@ -134,6 +134,32 @@ def clean_options(options) -> dict:
                 raise ValueError("Finding clips by sight and the voice-over must each be on or off.")
             out[k] = v
             continue
+        if k == "speed":
+            try:
+                sp = float(v)
+                if sp in (-2.0, -1.0, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0):
+                    out[k] = sp
+            except (ValueError, TypeError):
+                pass
+            continue
+        if k == "segments":
+            try:
+                raw = v
+                if isinstance(raw, str):
+                    raw = json.loads(raw)
+                if isinstance(raw, list):
+                    segs = []
+                    for item in raw:
+                        if isinstance(item, (list, tuple)) and len(item) == 2:
+                            s0, s1 = round(float(item[0]), 2), round(float(item[1]), 2)
+                            if math.isfinite(s0) and math.isfinite(s1) and s1 > s0:
+                                segs.append([s0, s1])
+                    if segs:
+                        segs.sort(key=lambda x: x[0])
+                        out[k] = segs
+            except Exception:
+                pass
+            continue
         if k == "ref_prompt":              # the person's own words about the look: one line, kept even when empty
             out[k] = " ".join(str(v or "").split())[:500]
             continue
@@ -181,6 +207,8 @@ def public(job) -> dict:
     out = {k: v for k, v in job.items() if k not in HIDDEN}
     out["source"] = {k: v for k, v in job["source"].items() if k != "path"}
     out["clips"] = [{k: v for k, v in c.items() if k not in CLIP_HIDDEN} for c in job["clips"]]
+    d = Path(job.get("dir") or "")
+    out["has_source"] = bool((d / "source.mp4").is_file() or any(d.glob("source.*")) or (job.get("source_path") and Path(job["source_path"]).is_file()))
     ai = job.get("ai") or {}
     out["ai"] = {"tokens": ai.get("tokens", 0), "note": ai.get("note", ""), "used": bool(ai.get("model"))}   # never the model, never raw errors
     if job.get("status") == "queued":
@@ -479,18 +507,26 @@ def request_render(jid, cid, changes: dict):
     job = _jobs[jid]
     clip = next(c for c in job["clips"] if c["id"] == cid)
     new = dict(clip)
-    for k in ("captions", "big_text"):
+    for k in ("captions", "big_text", "speed", "segments"):
         if k in changes:
             new.update(clean_options({k: changes[k]}))
     for k in ("start", "end"):
         if k in changes:
             new[k] = round(float(changes[k]), 2)
+    if new.get("segments") and len(new["segments"]) > 1:
+        new["start"] = new["segments"][0][0]
+        new["end"] = new["segments"][-1][1]
+        total_dur = sum(s1 - s0 for s0, s1 in new["segments"])
+    else:
+        if "segments" in new and len(new.get("segments", [])) <= 1:
+            new.pop("segments", None)
+        total_dur = new["end"] - new["start"]
     if "src_offset" in clip:  # live clip: can only move inside the saved piece of stream
         new["start"] = max(new["start"], clip["src_offset"])
         new["end"] = min(new["end"], clip["src_end"])
     if not (math.isfinite(new["start"]) and math.isfinite(new["end"])) or new["start"] < 0:
         raise ValueError("Those times aren't valid.")
-    if not 3 <= new["end"] - new["start"] <= 180:
+    if not 3 <= total_dur <= 180:
         raise ValueError("A clip can be 3 to 180 seconds long.")
     for k in ("hook", "title", "description", "style", "layout"):
         if k in changes:

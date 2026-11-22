@@ -235,22 +235,45 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return head + "\n".join(ev) + "\n"
 
 
+def remap_words(words, segments):
+    """Filter out words in cut gaps and shift words in later segments so subtitles match concatenated video."""
+    if not segments or len(segments) <= 1:
+        return words
+    out = []
+    seg_cum = []
+    cum = 0.0
+    for s0, s1 in segments:
+        seg_cum.append((s0, s1, cum))
+        cum += (s1 - s0)
+    for w in words:
+        ws, we = w.get("s", 0.0), w.get("e", 0.0)
+        for s0, s1, c_offset in seg_cum:
+            if s0 - 0.05 <= ws < s1 + 0.05:
+                new_s = c_offset + max(0.0, ws - s0)
+                new_e = c_offset + max(0.0, min(s1 - s0, we - s0))
+                base_start = segments[0][0]
+                out.append(dict(w, s=round(base_start + new_s, 2), e=round(base_start + new_e, 2)))
+                break
+    return out
+
+
 PIP_W = 380            # how wide the facecam is in the 1080-wide frame
 PIP_MARGIN = 26
 
 
-def _filter(layout, fg_h, facecam=None):
+def _filter(layout, fg_h, facecam=None, v_in="0:v"):
+    v_tag = f"[{v_in}]" if not v_in.startswith("[") else v_in
     if layout == "gameplay" and facecam:
         # The game fills the screen, and the webcam sits in the top corner of it, so a viewer sees
         # the play and the face at the same time.
         fx, fy, fw, fh = (int(v) for v in facecam)
         if fw > 8 and fh > 8:
             pip_h = max(2, int(round(PIP_W * fh / fw)))
-            return (f"[0:v]fps={config.OUT_FPS},split=2[base][fc];"
+            return (f"{v_tag}fps={config.OUT_FPS},split=2[base][fc];"
                     f"[base]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1[b];"
                     f"[fc]crop={fw}:{fh}:{fx}:{fy},scale={PIP_W}:{pip_h},setsar=1[p];"
                     f"[b][p]overlay={W - PIP_W - PIP_MARGIN}:{PIP_MARGIN}[v0];")
-    fill = f"[0:v]fps={config.OUT_FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H}"
+    fill = f"{v_tag}fps={config.OUT_FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H}"
     if layout == "crop" or (layout == "gameplay" and not facecam):
         return fill + ",setsar=1[v0];"
     if layout == "left":
@@ -258,12 +281,12 @@ def _filter(layout, fg_h, facecam=None):
     if layout == "right":
         return fill + ":in_w-out_w:0,setsar=1[v0];"
     if layout == "fit":
-        return f"[0:v]fps={config.OUT_FPS},scale={W}:{fg_h},pad={W}:{H}:0:(oh-ih)/2:black,setsar=1[v0];"
+        return f"{v_tag}fps={config.OUT_FPS},scale={W}:{fg_h},pad={W}:{H}:0:(oh-ih)/2:black,setsar=1[v0];"
     if layout == "split":
         half = f"scale={W}:{H // 2}:force_original_aspect_ratio=increase,crop={W}:{H // 2}"
-        return (f"[0:v]fps={config.OUT_FPS},split=2[l][r];[l]crop=iw/2:ih:0:0,{half}[t];"
+        return (f"{v_tag}fps={config.OUT_FPS},split=2[l][r];[l]crop=iw/2:ih:0:0,{half}[t];"
                 f"[r]crop=iw/2:ih:iw/2:0,{half}[u];[t][u]vstack,setsar=1[v0];")
-    return (f"[0:v]fps={config.OUT_FPS},split=2[a][b];"
+    return (f"{v_tag}fps={config.OUT_FPS},split=2[a][b];"
             f"[a]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,boxblur=6:2,"
             f"scale={W}:{H},eq=brightness=-0.14:saturation=1.15[bg];"
             f"[b]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h}[fg];"
@@ -305,15 +328,29 @@ LOUD = "loudnorm=I=-14:TP=-1.5:LRA=11"
 DUCK = 0.25          # how loud the video's own sound is left under a voice-over
 
 
-def _sound(has_sound: bool, voice: bool) -> tuple:
+def _sound(has_sound: bool, voice: bool, speed: float = 1.0, a_in: str = "0:a:0") -> tuple:
     """The sound of a clip: (filter text to add after the picture, ffmpeg arguments for it). Four cases:
     the video's own sound; no sound at all; a voice-over alone; a voice-over over the video's own sound, turned down."""
+    sp_filter = ""
+    if speed != 1.0:
+        if speed == -1.0:
+            sp_filter = ",areverse"
+        elif speed == -2.0:
+            sp_filter = ",areverse,atempo=2.0"
+        elif speed > 0:
+            sp_filter = f",atempo={speed:.4f}"
+
+    in_tag = f"[{a_in}]" if not a_in.startswith("0:") else a_in
+    in_filt_tag = f"[{a_in}]" if not a_in.startswith("[") else a_in
     if voice and has_sound:
-        return (f";[0:a:0]volume={DUCK}[o];[1:a:0][o]amix=inputs=2:duration=longest:normalize=0,{LOUD}[a]", ["-map", "[a]"])
+        return (f";{in_filt_tag}volume={DUCK}{sp_filter}[o];[1:a:0][o]amix=inputs=2:duration=longest:normalize=0,{LOUD}[a]", ["-map", "[a]"])
     if voice:
         return (f";[1:a:0]{LOUD},apad[a]", ["-map", "[a]"])
     if has_sound:
-        return ("", ["-map", "0:a:0", "-af", LOUD])
+        af = f"{sp_filter[1:]},{LOUD}" if sp_filter else LOUD
+        if a_in and a_in != "0:a:0":
+            return (f";{in_filt_tag}{af}[a]", ["-map", "[a]"])
+        return ("", ["-map", in_tag, "-af", af])
     return ("", ["-an"])
 
 
@@ -321,15 +358,53 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     """Writes <name>.mp4, <name>.jpg and <name>.ass into out_dir. Returns file names.
     `voiceover` is a sound file (made by tts.py) read over the clip, which starts at second 0 of the clip.
     `cancel` is asked twice a second while ffmpeg works; when it says yes, ffmpeg is stopped and Cancelled is raised."""
+    src = Path(src).resolve()
+    if voiceover:
+        voiceover = Path(voiceover).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     start, end = clip["start"], clip["end"]
+    segments = clip.get("segments")
+    if segments and isinstance(segments, list) and len(segments) > 1:
+        clean_segs = []
+        for s in segments:
+            if isinstance(s, (list, tuple)) and len(s) == 2:
+                s0, s1 = round(float(s[0]), 2), round(float(s[1]), 2)
+                if s1 > s0:
+                    clean_segs.append([s0, s1])
+        if clean_segs:
+            clean_segs.sort(key=lambda x: x[0])
+            segments = clean_segs
+            start = segments[0][0]
+            end = segments[-1][1]
+            total_dur = sum(s1 - s0 for s0, s1 in segments)
+            words = remap_words(words, segments)
+        else:
+            segments = None
+            total_dur = end - start
+    else:
+        segments = None
+        total_dur = end - start
+
+    speed = float(clip.get("speed", 1.0) or 1.0)
+    if speed not in (-2.0, -1.0, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0):
+        speed = 1.0
     layout, fg_h, hook_y, cap_y = geometry(src_w, src_h, clip.get("layout", "blur"))
     face = clip.get("facecam")
     if layout == "gameplay" and not (face and len(face) == 4):
         layout = "crop"     # no webcam found: the game fills the screen, which is still the right shape
     hook_y = _hook_y(layout, hook_y, face)
     hook = clip.get("hook", "") if clip.get("big_text", True) else ""   # big text switched off: no title box on the video
-    ass = build_ass(words if clip.get("captions", True) else [], start, end, hook, clip.get("style", "bounce"),
+
+    if speed > 0 and speed != 1.0 and words:
+        words = [dict(w, s=start + (w["s"] - start) / speed, e=start + (w["e"] - start) / speed) for w in words]
+        end_ass = start + total_dur / speed
+    elif speed < 0:
+        words = []
+        end_ass = start + total_dur / abs(speed)
+    else:
+        end_ass = start + total_dur
+
+    ass = build_ass(words if clip.get("captions", True) else [], start, end_ass, hook, clip.get("style", "bounce"),
                     clip.get("highlight_words", []), hook_y, cap_y)
     # The clip is made in a short work folder and moved into place afterwards. The caption step of ffmpeg cannot
     # open files whose full path is longer than 260 characters on Windows, which a data folder deep inside other
@@ -339,24 +414,64 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
     try:
         # The title and description are also written into the file itself, for any place that reads them from it.
         meta = {"title": clip.get("title") or "", "description": clip.get("description") or "", "comment": clip.get("description") or ""}
-        return _render_in(work, src, out_dir, name, start, end, layout, fg_h, ass, face=face, meta=meta, voiceover=voiceover, cancel=cancel)
+        return _render_in(work, src, out_dir, name, start, end, layout, fg_h, ass, face=face, meta=meta, voiceover=voiceover, cancel=cancel, speed=speed, segments=segments)
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
 
-def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, face=None, meta=None, voiceover=None, cancel=None) -> dict:
+def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layout, fg_h, ass: str, face=None, meta=None, voiceover=None, cancel=None, speed: float = 1.0, segments=None) -> dict:
     global _qsv_ok
     (work / f"{name}.ass").write_text(ass, encoding="utf-8")
     (work / "f").mkdir()
     for f in config.FONTS_DIR.glob("*.ttf"):
         shutil.copyfile(f, work / "f" / f.name)
     voice = bool(voiceover) and Path(voiceover).is_file()
-    sound_fc, sound_args = _sound(has_audio(src), voice)
-    fc = _filter(layout, fg_h, face) + f"[v0]ass={name}.ass:fontsdir=f[v]" + sound_fc
+
+    total_dur = sum(s1 - s0 for s0, s1 in segments) if (segments and len(segments) > 1) else (end - start)
+    out_dur = total_dur / abs(speed)
+
+    trim_fc = ""
+    v_in = "0:v"
+    a_in = "0:a:0"
+    if segments and len(segments) > 1:
+        N = len(segments)
+        for i, (s0, s1) in enumerate(segments):
+            rel_s0 = s0 - start
+            rel_s1 = s1 - start
+            trim_fc += f"[0:v]trim=start={rel_s0:.2f}:end={rel_s1:.2f},setpts=PTS-STARTPTS[v_seg_{i}];"
+            if has_audio(src):
+                trim_fc += f"[0:a]atrim=start={rel_s0:.2f}:end={rel_s1:.2f},asetpts=PTS-STARTPTS[a_seg_{i}];"
+        inputs = ""
+        for i in range(N):
+            inputs += f"[v_seg_{i}]"
+            if has_audio(src):
+                inputs += f"[a_seg_{i}]"
+        if has_audio(src):
+            trim_fc += f"{inputs}concat=n={N}:v=1:a=1[src_v][src_a];"
+            v_in = "src_v"
+            a_in = "src_a"
+        else:
+            trim_fc += f"{inputs}concat=n={N}:v=1:a=0[src_v];"
+            v_in = "src_v"
+            a_in = None
+
+    sound_fc, sound_args = _sound(has_audio(src), voice, speed=speed, a_in=a_in)
+
+    if speed == 1.0:
+        fc = trim_fc + _filter(layout, fg_h, face, v_in=v_in) + f"[v0]ass={name}.ass:fontsdir=f[v]" + sound_fc
+    else:
+        if speed == -2.0:
+            sp_vf = "reverse,setpts=0.5*PTS"
+        elif speed == -1.0:
+            sp_vf = "reverse,setpts=PTS-STARTPTS"
+        else:
+            sp_vf = f"setpts={(1.0 / speed):.6f}*PTS"
+        fc = trim_fc + _filter(layout, fg_h, face, v_in=v_in) + f"[v0]ass={name}.ass:fontsdir=f[v_sub];[v_sub]{sp_vf}[v]" + sound_fc
+
     base = ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.2f}", "-t", f"{end - start:.2f}", "-i", str(src)]
     if voice:
         base += ["-i", str(voiceover)]
-    base += ["-filter_complex", fc, "-map", "[v]", *sound_args, "-t", f"{end - start:.2f}"]
+    base += ["-filter_complex", fc, "-map", "[v]", *sound_args, "-t", f"{out_dur:.2f}"]
     if "-an" not in sound_args:
         base += ["-c:a", "aac", "-b:a", "160k", "-ar", "48000"]
     for k, v in (meta or {}).items():
@@ -369,7 +484,7 @@ def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layo
     encoders.append(("x264", ["yuv420p", "-c:v", "libx264", "-crf", X264[1], "-preset", X264[0]]))
     err = None
     for label, enc in encoders:
-        p = run_cancellable(base + enc + [f"{name}.mp4"], cwd=work, timeout=_timeout(end - start), cancel=cancel)
+        p = run_cancellable(base + enc + [f"{name}.mp4"], cwd=work, timeout=_timeout(out_dur), cancel=cancel)
         if p.returncode == 0:
             if label == "qsv":
                 _qsv_ok = True
@@ -379,7 +494,7 @@ def _render_in(work: Path, src: Path, out_dir: Path, name: str, start, end, layo
             _qsv_ok = False
     else:
         raise RuntimeError(f"Render failed: {err}")
-    cover_t = min(1.2, (end - start) / 2)
+    cover_t = min(1.2, out_dur / 2)
     run(["ffmpeg", "-y", "-v", "error", "-ss", f"{cover_t:.2f}", "-i", f"{name}.mp4", "-frames:v", "1",
          "-q:v", "3", f"{name}.jpg"], cwd=work)
     for ext in ("mp4", "jpg", "ass"):
