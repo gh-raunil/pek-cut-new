@@ -2966,8 +2966,9 @@ function drawClipDlg(full) {
   const stage = c.status === "done" ? `<div class="stage-wrap">
       <div class="stage-top-pill">
         <span class="badge ${scoreCls(c.score)}" id="stage_badge">Rendered (9:16)</span>
-        <button type="button" class="btn sm ghost" id="stage_toggle_btn" style="background:rgba(20,14,11,0.7);backdrop-filter:blur(4px);color:#fff">${ic("play")}Review range in full video</button>
+        <button type="button" class="btn sm ghost" id="stage_toggle_btn" style="background:rgba(20,14,11,0.7);backdrop-filter:blur(4px);color:#fff">${ic("play")}Live Source Preview</button>
       </div>
+      <video id="source_video" src="/media/${j.id}/source.mp4" controls playsinline preload="auto" style="display:none"></video>
       <video id="stage_video" src="${m}${esc(c.file)}?v=${c.version}" poster="${m}${esc(c.cover)}?v=${c.version}" controls playsinline preload="auto"></video>
       <div class="stage-speed-bar" id="stage_speed_bar">
         <span class="speed-lbl">Speed:</span>
@@ -3157,6 +3158,7 @@ function initTimeline(j, c) {
   const inStart = $("#tl_in_start");
   const inEnd = $("#tl_in_end");
   const stageVideo = $("#stage_video");
+  const sourceVideo = $("#source_video");
   const stageBadge = $("#stage_badge");
   const stageToggleBtn = $("#stage_toggle_btn");
   const zVal = $("#tl_z_val");
@@ -3173,7 +3175,8 @@ function initTimeline(j, c) {
   let start = Math.max(minTime, Math.min(maxTime - 3, Number(inStart?.value) || c.start));
   let end = Math.min(maxTime, Math.max(start + 3, Number(inEnd?.value) || c.end));
   let pointerTime = start;
-  let isReview = false;
+  let mode = stageVideo ? "rendered" : "source";
+  let isReview = mode === "source";
   let isLoop = true;
   let dragType = null;
   let startX = 0;
@@ -3181,36 +3184,50 @@ function initTimeline(j, c) {
   let initEnd = 0;
   let zoom = 1.0;
 
+  function getActiveVideo() {
+    return (mode === "rendered" && stageVideo) ? stageVideo : (sourceVideo || stageVideo);
+  }
+
+  if (sourceVideo) {
+    const onMeta = () => {
+      sourceVideo.currentTime = start;
+    };
+    if (sourceVideo.readyState >= 1) onMeta();
+    else sourceVideo.addEventListener("loadedmetadata", onMeta, { once: true });
+  }
+
   function syncPlayBtn() {
     if (!playBtn) return;
-    const isPlaying = stageVideo && !stageVideo.paused && !stageVideo.ended;
+    const v = getActiveVideo();
+    const isPlaying = v && !v.paused && !v.ended;
     playBtn.innerHTML = isPlaying ? ic("pause") : ic("play_f");
     playBtn.title = isPlaying ? "Pause (Space)" : "Play (Space)";
     playBtn.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
   }
 
   function togglePlay() {
-    if (!stageVideo) return;
-    if (stageVideo.paused) {
-      if (isReview) {
-        if (stageVideo.currentTime >= end || stageVideo.currentTime < start) {
+    const v = getActiveVideo();
+    if (!v) return;
+    if (v.paused) {
+      if (mode === "source") {
+        if (v.currentTime >= end || v.currentTime < start) {
           const firstKept = segments.find(s => !s.deleted);
-          stageVideo.currentTime = firstKept ? firstKept.start : start;
+          v.currentTime = firstKept ? firstKept.start : start;
         }
       } else {
-        const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
-        if (stageVideo.currentTime >= clipDur - 0.05 || stageVideo.ended) {
-          stageVideo.currentTime = 0;
+        const clipDur = (v.duration && isFinite(v.duration)) ? v.duration : Math.max(0.1, end - start);
+        if (v.currentTime >= clipDur - 0.05 || v.ended) {
+          v.currentTime = 0;
         }
       }
       if (currentSpeed > 0) {
-        stageVideo.playbackRate = currentSpeed;
-        stageVideo.play().catch(() => {});
+        v.playbackRate = currentSpeed;
+        v.play().catch(() => {});
       } else {
         setSpeed(currentSpeed);
       }
     } else {
-      stageVideo.pause();
+      v.pause();
       if (reverseTimer) { cancelAnimationFrame(reverseTimer); reverseTimer = null; }
     }
     syncPlayBtn();
@@ -3424,13 +3441,14 @@ function initTimeline(j, c) {
       cancelAnimationFrame(reverseTimer);
       reverseTimer = null;
     }
-    if (!stageVideo) return;
+    const v = getActiveVideo();
+    if (!v) return;
 
     if (currentSpeed > 0) {
-      stageVideo.playbackRate = currentSpeed;
-      if (stageVideo.paused) stageVideo.play().catch(() => {});
+      v.playbackRate = currentSpeed;
+      if (v.paused) v.play().catch(() => {});
     } else {
-      stageVideo.pause();
+      v.pause();
       const mult = Math.abs(currentSpeed);
       let lastT = performance.now();
 
@@ -3438,9 +3456,10 @@ function initTimeline(j, c) {
         if (currentSpeed >= 0) return;
         const dt = (now - lastT) / 1000;
         lastT = now;
-        if (stageVideo) {
-          let nt = stageVideo.currentTime - (dt * mult);
-          if (isReview) {
+        const curV = getActiveVideo();
+        if (curV) {
+          let nt = curV.currentTime - (dt * mult);
+          if (mode === "source") {
             const del = segments.find(s => s.deleted && nt <= s.end && nt >= s.start);
             if (del) {
               const prevKept = [...segments].reverse().find(s => !s.deleted && s.end <= del.start + 0.05);
@@ -3449,17 +3468,17 @@ function initTimeline(j, c) {
             if (nt <= start) {
               if (isLoop) nt = end;
               else {
-                stageVideo.currentTime = start;
+                curV.currentTime = start;
                 updateVisuals(start);
                 return;
               }
             }
           } else {
-            const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
+            const clipDur = (curV.duration && isFinite(curV.duration)) ? curV.duration : Math.max(0.1, end - start);
             if (nt <= 0) nt = clipDur;
           }
-          stageVideo.currentTime = nt;
-          updateVisuals(isReview ? nt : (start + nt));
+          curV.currentTime = nt;
+          updateVisuals(mode === "source" ? nt : (start + nt));
         }
         reverseTimer = requestAnimationFrame(reverseStep);
       }
@@ -3568,11 +3587,12 @@ function initTimeline(j, c) {
     if (inStart && inStart !== document.activeElement) inStart.value = start.toFixed(2);
     if (inEnd && inEnd !== document.activeElement) inEnd.value = end.toFixed(2);
 
+    const v = getActiveVideo();
     let ct;
     if (currTime != null) {
       ct = currTime;
-    } else if (stageVideo) {
-      ct = isReview ? stageVideo.currentTime : (start + (stageVideo.currentTime || 0));
+    } else if (v) {
+      ct = (mode === "source") ? v.currentTime : (start + (v.currentTime || 0));
     } else {
       ct = pointerTime;
     }
@@ -3593,13 +3613,104 @@ function initTimeline(j, c) {
       progFill.style.width = (((rPct - lPct) * progRelPct) / 100) + "%";
     }
 
-    if (isReview && stageBadge) {
-      const cutCount = segments.filter(s => s.deleted).length;
-      const keptDur = segments.filter(s => !s.deleted).reduce((acc, s) => acc + (s.end - s.start), 0);
-      stageBadge.className = "badge ok";
-      stageBadge.textContent = `Review: ${fmt(start)} – ${fmt(end)} (${keptDur.toFixed(1)}s${cutCount > 0 ? `, ${cutCount} cut` : ""})`;
+    if (stageBadge) {
+      if (mode === "source") {
+        const cutCount = segments.filter(s => s.deleted).length;
+        const keptDur = segments.filter(s => !s.deleted).reduce((acc, s) => acc + (s.end - s.start), 0);
+        stageBadge.className = "badge ok";
+        stageBadge.textContent = `Live Preview: ${fmt(start)} – ${fmt(end)} (${keptDur.toFixed(1)}s${cutCount > 0 ? `, ${cutCount} cut` : ""})`;
+      } else {
+        stageBadge.className = `badge ${scoreCls(c.score)}`;
+        stageBadge.textContent = "Rendered (9:16)";
+      }
     }
     renderSegments();
+  }
+
+  function setMode(newMode) {
+    if (newMode === mode) return;
+    if (newMode === "rendered" && !stageVideo) return;
+    const prevV = getActiveVideo();
+    if (prevV) prevV.pause();
+
+    mode = newMode;
+    isReview = (mode === "source");
+    if (mode === "rendered") {
+      if (sourceVideo) sourceVideo.style.display = "none";
+      if (stageVideo) stageVideo.style.display = "block";
+      if (stageToggleBtn) {
+        stageToggleBtn.innerHTML = `${ic("play")}Live Source Preview`;
+        stageToggleBtn.title = "Switch to full video source for live scrubbing & trimming";
+      }
+    } else {
+      if (stageVideo) stageVideo.style.display = "none";
+      if (sourceVideo) sourceVideo.style.display = "block";
+      if (stageToggleBtn) {
+        stageToggleBtn.innerHTML = `${ic("film")}Rendered (9:16)`;
+        stageToggleBtn.title = "View rendered 9:16 clip";
+      }
+    }
+    seekLive(pointerTime);
+    syncPlayBtn();
+    updateVisuals(pointerTime);
+  }
+
+  function switchToReview(seekTime, autoplay = false) {
+    setMode("source");
+    if (seekTime != null) seekLive(seekTime);
+    if (autoplay) {
+      const v = getActiveVideo();
+      if (v) {
+        if (currentSpeed > 0) {
+          v.playbackRate = currentSpeed;
+          v.play().catch(() => {});
+        } else {
+          setSpeed(currentSpeed);
+        }
+      }
+    }
+  }
+
+  function switchToRendered() {
+    setMode("rendered");
+  }
+
+  if (stageToggleBtn) {
+    stageToggleBtn.onclick = () => {
+      if (mode === "source") setMode("rendered");
+      else setMode("source");
+    };
+  }
+
+  let seekRaf = null;
+  let targetSeekT = null;
+
+  function seekLive(t) {
+    pointerTime = Math.max(minTime, Math.min(maxTime, Math.round(t * 100) / 100));
+    targetSeekT = pointerTime;
+
+    const v = getActiveVideo();
+    if (v) {
+      if (!seekRaf) {
+        seekRaf = requestAnimationFrame(() => {
+          seekRaf = null;
+          if (targetSeekT != null && v) {
+            if (mode === "source") {
+              v.currentTime = targetSeekT;
+            } else {
+              const clipDur = (v.duration && isFinite(v.duration)) ? v.duration : Math.max(0.1, end - start);
+              v.currentTime = Math.max(0, Math.min(clipDur, targetSeekT - start));
+            }
+          }
+        });
+      }
+    }
+    syncPlayBtn();
+    updateVisuals(pointerTime);
+  }
+
+  function seekVideoTo(t) {
+    seekLive(t);
   }
 
   function setTimes(newStart, newEnd, seekVideo = true) {
@@ -3626,120 +3737,53 @@ function initTimeline(j, c) {
 
     updateVisuals(start);
 
-    if (seekVideo && stageVideo) {
-      if (isReview) stageVideo.currentTime = start;
-      else stageVideo.currentTime = 0;
-      stageVideo.pause();
-    }
-  }
-
-  function seekVideoTo(t) {
-    pointerTime = Math.max(minTime, Math.min(maxTime, Math.round(t * 100) / 100));
-    if (stageVideo) {
-      if (isReview) {
-        stageVideo.currentTime = pointerTime;
-      } else {
-        const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
-        stageVideo.currentTime = Math.max(0, Math.min(clipDur, pointerTime - start));
+    if (seekVideo) {
+      if (stageVideo && mode !== "source") {
+        setMode("source");
       }
-      stageVideo.pause();
-    }
-    syncPlayBtn();
-    updateVisuals(pointerTime);
-  }
-
-  function switchToReview(seekTime, autoplay = false) {
-    if (!stageVideo) return;
-    const srcUrl = `/media/${j.id}/source.mp4`;
-    if (!isReview || stageVideo.dataset.mode !== "review") {
-      isReview = true;
-      stageVideo.dataset.mode = "review";
-      if (!stageVideo.src.includes(srcUrl)) {
-        stageVideo.src = srcUrl;
-        stageVideo.load();
-      }
-      if (stageToggleBtn) stageToggleBtn.innerHTML = `${ic("film")}Rendered clip (9:16)`;
-      if (stageBadge) {
-        stageBadge.className = "badge ok";
-        stageBadge.textContent = `Review: ${fmt(start)} – ${fmt(end)}`;
-      }
-    }
-    const t = seekTime != null ? seekTime : start;
-    stageVideo.currentTime = t;
-    updateVisuals(t);
-    if (autoplay) {
-      if (currentSpeed > 0) {
-        stageVideo.playbackRate = currentSpeed;
-        stageVideo.play().catch(() => {});
-      } else {
-        setSpeed(currentSpeed);
-      }
-    } else {
-      stageVideo.pause();
+      seekLive(start);
     }
   }
 
-  function switchToRendered() {
-    if (!stageVideo) return;
-    isReview = false;
-    stageVideo.dataset.mode = "rendered";
-    stageVideo.src = `/media/${j.id}/${esc(c.file)}?v=${c.version}`;
-    stageVideo.currentTime = 0;
-    stageVideo.load();
-    if (stageToggleBtn) stageToggleBtn.innerHTML = `${ic("play")}Review range in full video`;
-    if (stageBadge) {
-      stageBadge.className = `badge ${scoreCls(c.score)}`;
-      stageBadge.textContent = "Rendered (9:16)";
-    }
-    if (currentSpeed > 0) {
-      stageVideo.playbackRate = currentSpeed;
-    } else {
-      setSpeed(currentSpeed);
-    }
-    updateVisuals(start);
-  }
-
-  if (stageToggleBtn) {
-    stageToggleBtn.onclick = () => {
-      if (isReview) switchToRendered();
-      else switchToReview(start, true);
-    };
-  }
-
-  if (stageVideo) {
-    stageVideo.ontimeupdate = () => {
-      if (isReview) {
-        let ct = stageVideo.currentTime;
+  const allVideos = [sourceVideo, stageVideo].filter(Boolean);
+  allVideos.forEach(v => {
+    v.ontimeupdate = () => {
+      if (v !== getActiveVideo()) return;
+      if (mode === "source") {
+        let ct = v.currentTime;
         ct = checkCutSkip(ct);
         if (ct >= end) {
           const firstKept = segments.find(s => !s.deleted);
           const tStart = firstKept ? firstKept.start : start;
           if (isLoop) {
-            stageVideo.currentTime = tStart;
+            v.currentTime = tStart;
           } else {
-            stageVideo.pause();
-            stageVideo.currentTime = tStart;
+            v.pause();
+            v.currentTime = tStart;
           }
         } else if (ct < start - 0.5) {
           const firstKept = segments.find(s => !s.deleted);
-          stageVideo.currentTime = firstKept ? firstKept.start : start;
+          v.currentTime = firstKept ? firstKept.start : start;
         }
-        updateVisuals(stageVideo.currentTime);
+        updateVisuals(v.currentTime);
       } else {
-        const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
-        if (stageVideo.currentTime >= clipDur - 0.02 || stageVideo.ended) {
+        const clipDur = (v.duration && isFinite(v.duration)) ? v.duration : Math.max(0.1, end - start);
+        if (v.currentTime >= clipDur - 0.02 || v.ended) {
           if (isLoop) {
-            stageVideo.currentTime = 0;
-            stageVideo.play().catch(() => {});
+            v.currentTime = 0;
+            v.play().catch(() => {});
           } else {
-            stageVideo.pause();
+            v.pause();
           }
         }
-        const currentT = start + Math.max(0, Math.min(clipDur, stageVideo.currentTime));
+        const currentT = start + Math.max(0, Math.min(clipDur, v.currentTime));
         updateVisuals(currentT);
       }
     };
-  }
+    v.addEventListener("play", syncPlayBtn);
+    v.addEventListener("pause", syncPlayBtn);
+    v.addEventListener("ended", syncPlayBtn);
+  });
 
   let initSegments = null;
   let didDragMove = false;
@@ -3749,10 +3793,14 @@ function initTimeline(j, c) {
     startX = e.clientX;
     initStart = start;
     initEnd = end;
-    if (stageVideo) stageVideo.pause();
+    const v = getActiveVideo();
+    if (v) v.pause();
     initSegments = segments.map(s => ({ ...s }));
     if (e.target.setPointerCapture) {
       try { e.target.setPointerCapture(e.pointerId); } catch {}
+    }
+    if (stageVideo && mode !== "source" && (type === "left" || type === "right" || type === "range")) {
+      setMode("source");
     }
     e.stopPropagation();
     e.preventDefault();
@@ -3769,23 +3817,14 @@ function initTimeline(j, c) {
       let ns = Math.max(minTime, Math.min(initEnd - 3, initStart + dt));
       if (initEnd - ns > 180) ns = initEnd - 180;
       setTimes(ns, initEnd, false);
-      if (stageVideo) {
-        if (isReview) stageVideo.currentTime = start;
-        else stageVideo.currentTime = 0;
-        stageVideo.pause();
-      }
+      if (stageVideo && mode !== "source") setMode("source");
+      seekLive(start);
     } else if (dragType === "right") {
       let ne = Math.min(maxTime, Math.max(initStart + 3, initEnd + dt));
       if (ne - initStart > 180) ne = initStart + 180;
       setTimes(initStart, ne, false);
-      if (stageVideo) {
-        if (isReview) stageVideo.currentTime = end;
-        else {
-          const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
-          stageVideo.currentTime = clipDur;
-        }
-        stageVideo.pause();
-      }
+      if (stageVideo && mode !== "source") setMode("source");
+      seekLive(end);
     } else if (dragType === "range") {
       const dur = initEnd - initStart;
       let ns = initStart + dt;
@@ -3802,17 +3841,17 @@ function initTimeline(j, c) {
         });
         renderSegments();
       }
-      if (stageVideo) {
-        if (isReview) stageVideo.currentTime = ns;
-        else stageVideo.currentTime = 0;
-        stageVideo.pause();
-      }
+      if (stageVideo && mode !== "source") setMode("source");
+      seekLive(ns);
       syncPlayBtn();
       updateVisuals(ns);
     } else if (dragType === "pointer") {
       const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
       const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
-      seekVideoTo(t);
+      if (stageVideo && mode !== "source" && (t < start - 0.2 || t > end + 0.2)) {
+        setMode("source");
+      }
+      seekLive(t);
     }
 
     if (viewport) {
@@ -3832,14 +3871,20 @@ function initTimeline(j, c) {
       }
       const wasType = dragType;
       dragType = null;
-      if (stageVideo) {
-        if (isReview) {
-          stageVideo.currentTime = pointerTime;
-        } else if (wasType === "pointer") {
-          const clipDur = (stageVideo.duration && isFinite(stageVideo.duration)) ? stageVideo.duration : Math.max(0.1, end - start);
-          stageVideo.currentTime = Math.max(0, Math.min(clipDur, pointerTime - start));
+      const v = getActiveVideo();
+      if (v) {
+        let finalT = pointerTime;
+        if (wasType === "left") finalT = start;
+        else if (wasType === "right") finalT = end;
+        else if (wasType === "range") finalT = start;
+
+        if (mode === "source") {
+          v.currentTime = finalT;
+        } else {
+          const clipDur = (v.duration && isFinite(v.duration)) ? v.duration : Math.max(0.1, end - start);
+          v.currentTime = Math.max(0, Math.min(clipDur, finalT - start));
         }
-        stageVideo.pause();
+        v.pause();
       }
       syncPlayBtn();
       setTimeout(() => { didDragMove = false; }, 60);
@@ -3859,7 +3904,10 @@ function initTimeline(j, c) {
     const rect = track.getBoundingClientRect();
     const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
     const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
-    seekVideoTo(t);
+    if (stageVideo && mode !== "source" && (t < start - 0.2 || t > end + 0.2)) {
+      setMode("source");
+    }
+    seekLive(t);
   });
 
   window.addEventListener("pointermove", onPointerMove);
@@ -3879,31 +3927,30 @@ function initTimeline(j, c) {
   window.addEventListener("keydown", onKeyDown);
 
   const cleanup = () => {
+    if (seekRaf) { cancelAnimationFrame(seekRaf); seekRaf = null; }
     if (reverseTimer) { cancelAnimationFrame(reverseTimer); reverseTimer = null; }
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", onPointerUp);
     window.removeEventListener("keydown", onKeyDown);
-    if (stageVideo) {
-      stageVideo.removeEventListener("play", syncPlayBtn);
-      stageVideo.removeEventListener("pause", syncPlayBtn);
-      stageVideo.removeEventListener("ended", syncPlayBtn);
-    }
+    allVideos.forEach(v => {
+      v.pause();
+      v.removeEventListener("play", syncPlayBtn);
+      v.removeEventListener("pause", syncPlayBtn);
+      v.removeEventListener("ended", syncPlayBtn);
+    });
     $("#clipdlg")?.removeEventListener("close", cleanup);
   };
   $("#clipdlg")?.addEventListener("close", cleanup);
-
-  if (stageVideo) {
-    stageVideo.addEventListener("play", syncPlayBtn);
-    stageVideo.addEventListener("pause", syncPlayBtn);
-    stageVideo.addEventListener("ended", syncPlayBtn);
-  }
 
   track?.addEventListener("click", e => {
     if (didDragMove || e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res") || dragType) return;
     const rect = track.getBoundingClientRect();
     const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
     const clickTime = Math.round(fromPct(clickPct) * 100) / 100;
-    seekVideoTo(clickTime);
+    if (stageVideo && mode !== "source" && (clickTime < start - 0.2 || clickTime > end + 0.2)) {
+      setMode("source");
+    }
+    seekLive(clickTime);
   });
 
   if (clipsTrack) {
@@ -3924,28 +3971,24 @@ function initTimeline(j, c) {
   box.querySelectorAll("[data-step-s]").forEach(btn => {
     btn.onclick = () => {
       const step = Number(btn.dataset.stepS);
-      setTimes(start + step, end, false);
-      if (stageVideo) stageVideo.pause();
+      setTimes(start + step, end, true);
     };
   });
   box.querySelectorAll("[data-step-e]").forEach(btn => {
     btn.onclick = () => {
       const step = Number(btn.dataset.stepE);
-      setTimes(start, end + step, false);
-      if (stageVideo) stageVideo.pause();
+      setTimes(start, end + step, true);
     };
   });
 
   if (inStart) {
     inStart.onchange = () => {
-      setTimes(Number(inStart.value), end, false);
-      if (stageVideo) stageVideo.pause();
+      setTimes(Number(inStart.value), end, true);
     };
   }
   if (inEnd) {
     inEnd.onchange = () => {
-      setTimes(start, Number(inEnd.value), false);
-      if (stageVideo) stageVideo.pause();
+      setTimes(start, Number(inEnd.value), true);
     };
   }
 
@@ -3972,7 +4015,12 @@ function initTimeline(j, c) {
       const chip = e.target.closest(".tl-seg-item, .tl-seg-chip");
       if (chip) {
         const seg = segments.find(s => s.id === Number(chip.dataset.segId));
-        if (seg) switchToReview(seg.start, true);
+        if (seg) {
+          setMode("source");
+          seekLive(seg.start);
+          const v = getActiveVideo();
+          if (v) v.play().catch(() => {});
+        }
       }
     };
   }
