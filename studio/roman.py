@@ -42,8 +42,8 @@ def needs_roman(text: str) -> bool:
 
 
 def drawable(text: str) -> bool:
-    """Can the caption fonts draw this? They have Latin letters (with accents), digits and punctuation only."""
-    return not any(ch.isalpha() and not (ord(ch) < 0x250 or 0x1E00 <= ord(ch) <= 0x1EFF) for ch in text or "")
+    """Can the caption fonts draw this? They have Latin letters (with accents), Devanagari, digits and punctuation."""
+    return not any(ch.isalpha() and not (ord(ch) < 0x250 or 0x1E00 <= ord(ch) <= 0x1EFF or 0x0900 <= ord(ch) <= 0x097F) for ch in text or "")
 
 
 # ---------------------------------------------------------------- Russian-style (Cyrillic), Greek and Korean letters

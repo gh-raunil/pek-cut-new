@@ -713,3 +713,90 @@ def _fix_caption_words(words: list, title: str = "", lang: str = "") -> list:
         if new:
             fixed.append(dict(w, w=new))
     return fixed or words
+
+
+CAPTION_LANGS = ("hinglish", "hindi", "english")
+
+
+def translate_caption_words_to_hindi(words: list, lang: str = "", title: str = "") -> list:
+    """Translate lines of captions into natural spoken Hindi in Devanagari script (हिन्दी)."""
+    lines = make_lines(words)
+    if not lines:
+        return words
+    numbered = "\n".join(f"{i}: {_safe(l['text'], 400)}" for i, l in enumerate(lines))
+    prompt = (
+        f"These are the caption lines of a short video clip in {_safe(lang) or 'English'}, one per line with "
+        "its number. Translate each line into natural, conversational, spoken Hindi in Devanagari script (हिन्दी देवनागरी लिपि) for on-screen captions: "
+        "keep names, numbers and the speaker's tone, and add punctuation. Do not write in Roman letters (Hinglish), write in Devanagari script. "
+        "Return a JSON array with EXACTLY one Hindi string per input line, in the same order.\n"
+        + (f"Video title, for names and context: {_safe(title)}\n" if title else "")
+        + f"\nLines ({len(lines)}):\n{numbered}")
+    out, _m, _u = ask_ai(prompt, FIX_SCHEMA, purpose="Caption translation to Hindi")
+    if not isinstance(out, list) or len(out) != len(lines):
+        raise RuntimeError("The AI's Hindi translation did not match the lines.")
+    done = []
+    for l, hi in zip(lines, out):
+        done += _spread(_CTRL.sub(" ", str(hi or "")).strip()[:400], l["s"], l["e"])
+    return done or words
+
+
+def hindi_devanagari_captions(words: list, title: str = "") -> list:
+    """Clean up a clip's captions in Hindi Devanagari script (हिन्दी देवनागरी लिपि)."""
+    if len(words) < 3:
+        return words
+    numbered = "\n".join(f"{i}: {_safe(w['w'], 60)}" for i, w in enumerate(words))
+    prompt = (
+        "These are the words of a short video clip's captions, one per line with its number, spoken in Hindi. "
+        "Rewrite each word in clean, natural Hindi in Devanagari script (देवनागरी लिपि): "
+        "correct spelling in Devanagari ('नमस्ते', 'हाँ', 'नहीं', 'क्या', 'वीडियो', 'सब्सक्राइब', 'चूना', 'जो', 'उसको'), "
+        "numbers as digits (11, 25), correct spelling of names and brands, fix obvious mishearings, and add punctuation. "
+        "Do NOT write in Roman letters (Hinglish), write in Devanagari script. "
+        "Return a JSON array with EXACTLY one string per input line, in the same order. Use \"\" for a word that "
+        "should disappear because it was merged into the previous one.\n"
+        + (f"Video title, for names and context: {_safe(title)}\n" if title else "")
+        + f"\nWords ({len(words)}):\n{numbered}"
+    )
+    try:
+        out, _m, _u = ask_ai(prompt, FIX_SCHEMA, purpose="Hindi caption fix")
+    except Exception:
+        return words
+    if not isinstance(out, list) or len(out) != len(words):
+        return words
+    fixed = []
+    for w, new in zip(words, out):
+        new = _CTRL.sub(" ", str(new or "")).strip()
+        if new:
+            fixed.append(dict(w, w=new))
+    return fixed or words
+
+
+def caption_words_for_lang(words: list, caption_lang: str, job_lang: str = "", title: str = "", youtube_english=None) -> list:
+    """Prepare clip caption words for the selected caption language ('hinglish', 'hindi', 'english')."""
+    caption_lang = (caption_lang or "hinglish").lower().strip()
+    if caption_lang not in CAPTION_LANGS:
+        caption_lang = "hinglish"
+
+    if caption_lang == "hindi":
+        has_dev = any(roman.has_hindi(w.get("w", "")) for w in words)
+        is_hindi = (job_lang or "").lower().startswith(("hi", "ur"))
+        if has_dev or is_hindi:
+            try:
+                return hindi_devanagari_captions(words, title)
+            except Exception:
+                return words
+        else:
+            try:
+                return translate_caption_words_to_hindi(words, lang=job_lang, title=title)
+            except Exception:
+                return hindi_devanagari_captions(words, title)
+
+    if caption_lang == "english":
+        if (job_lang or "").lower().startswith(("hi", "ur")) or any(roman.has_hindi(w.get("w", "")) for w in words):
+            try:
+                return roman.words(translate_caption_words(words, lang=job_lang or "Hindi", title=title))
+            except Exception:
+                pass
+        return english_captions(words, job_lang, title, youtube_english)
+
+    # caption_lang == "hinglish" (default):
+    return english_captions(words, job_lang, title, youtube_english)

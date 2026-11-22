@@ -110,7 +110,7 @@ on_clip_ready: list = []   # callbacks (job, clip), run once when a clip first f
 
 DEFAULTS = {"max_clips": 6, "min_len": 15, "max_len": 60, "style": "bounce", "layout": "blur", "quality": 720,
             "range_start": None, "range_end": None, "captions": True, "big_text": True, "hook_text": "",
-            "description_text": "", "lang": "en",   # lang: the language spoken
+            "description_text": "", "lang": "en", "caption_lang": "hinglish",   # lang: the language spoken, caption_lang: caption language
             # finding clips by what is on screen (studio/vision.py): detail is how many frames, parts how many pieces
             # the video is chopped into (0: about one per eight minutes), reference a saved reference's id
             "vision": False, "parts": 0, "detail": vision.DEFAULT_DETAIL, "reference": "", "ref_prompt": "",
@@ -133,6 +133,11 @@ def clean_options(options) -> dict:
             if not isinstance(v, bool):
                 raise ValueError("Finding clips by sight and the voice-over must each be on or off.")
             out[k] = v
+            continue
+        if k == "caption_lang":
+            v = str(v).lower().strip()
+            if v in ("hinglish", "hindi", "english"):
+                out[k] = v
             continue
         if k == "speed":
             try:
@@ -270,7 +275,7 @@ def _set(job, **kw):
 #   - a clip: clip["cancel"] is set. A clip that is only being made for the first time disappears; one that is being
 #     made again (after Save and re-make) goes back to how it was.
 Cancelled = media.Cancelled
-UNDO = ("start", "end", "hook", "title", "description", "hashtags", "style", "layout", "captions", "big_text")
+UNDO = ("start", "end", "hook", "title", "description", "hashtags", "style", "layout", "captions", "big_text", "caption_lang", "speed", "segments")
 
 
 def _cancelled(job, clip=None) -> bool:
@@ -507,7 +512,7 @@ def request_render(jid, cid, changes: dict):
     job = _jobs[jid]
     clip = next(c for c in job["clips"] if c["id"] == cid)
     new = dict(clip)
-    for k in ("captions", "big_text", "speed", "segments"):
+    for k in ("captions", "big_text", "speed", "segments", "caption_lang"):
         if k in changes:
             new.update(clean_options({k: changes[k]}))
     for k in ("start", "end"):
@@ -642,19 +647,24 @@ def render_one(job, clip, words):
 
 
 def _caption_words(job, clip, words, off):
-    span = [round(clip["start"], 2), round(clip["end"], 2), "en2"]      # "en2": captions made always-English
-    if clip.get("fixed_for") == span and clip.get("fixed_words") and not any(
-            roman.needs_roman(w.get("w", "")) for w in clip["fixed_words"]):
+    cap_lang = (clip.get("caption_lang") or job.get("options", {}).get("caption_lang") or job.get("caption_lang") or "hinglish").lower().strip()
+    if cap_lang not in ("hinglish", "hindi", "english"):
+        cap_lang = "hinglish"
+    span = [round(clip["start"], 2), round(clip["end"], 2), cap_lang]
+    if clip.get("fixed_for") == span and clip.get("fixed_words") and (
+            cap_lang == "hindi" or not any(roman.needs_roman(w.get("w", "")) for w in clip["fixed_words"])):
         raw = clip["fixed_words"]          # already tidied for this exact span: no second AI call
     else:
         raw = [w for w in words if clip["start"] - 1 <= w["s"] <= clip["end"] + 1]
         try:
             usage.set_context(job.get("creator"), job.get("title") or "")
-            raw = brain.english_captions(raw, job.get("lang") or "", job.get("title") or "",
-                                         youtube_english=lambda: _english_part(job, clip))
+            raw = brain.caption_words_for_lang(raw, cap_lang, job.get("lang") or "", job.get("title") or "",
+                                               youtube_english=lambda: _english_part(job, clip))
             clip.update(fixed_words=raw, fixed_for=span)
         except Exception:  # noqa: BLE001 - captions still render with the words as heard
             pass
+    if cap_lang == "hindi":
+        return [dict(w, s=w["s"] - off, e=w["e"] - off) for w in raw]
     # the last word on it: whatever was said, nothing is drawn in Hindi or Urdu script
     return [dict(w, s=w["s"] - off, e=w["e"] - off) for w in roman.words(raw)]
 
