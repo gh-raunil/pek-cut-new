@@ -677,7 +677,7 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .tl-track{position:relative;height:74px;min-width:100%;background:#F8FAFC;cursor:crosshair;touch-action:none}
 
 /* Ruler & Ticks */
-.tl-ticks{position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid #E2E8F0;background:#F1F5F9;pointer-events:none}
+.tl-ticks{position:absolute;left:0;right:0;top:0;height:20px;border-bottom:1px solid #E2E8F0;background:#F1F5F9;pointer-events:auto;cursor:ew-resize;touch-action:none}
 .tl-tick-item{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;transform:translateX(-50%);pointer-events:none}
 .tl-tick-line{width:1px;height:6px;background:#94A3B8}
 .tl-tick-time{font-size:9px;font-weight:600;color:#64748B;font-family:monospace;line-height:1.2;padding-top:2px}
@@ -687,9 +687,11 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .tl-dim.left{left:0}
 .tl-dim.right{right:0}
 
-/* Separated Video Clips Track */
-.tl-clips-track{position:absolute;left:0;right:0;top:21px;bottom:5px;pointer-events:auto;z-index:3}
-.tl-video-card{position:absolute;top:0;bottom:0;border-radius:6px;box-sizing:border-box;pointer-events:auto;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;justify-content:space-between;padding:3px 7px;user-select:none;-webkit-user-select:none;overflow:hidden}
+/* Separated Video Clips Track (Draggable Clip Window) */
+.tl-clips-track{position:absolute;left:0;right:0;top:21px;bottom:5px;pointer-events:auto;z-index:3;cursor:grab;touch-action:none}
+.tl-clips-track:active{cursor:grabbing}
+.tl-video-card{position:absolute;top:0;bottom:0;border-radius:6px;box-sizing:border-box;pointer-events:auto;cursor:grab;transition:border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;justify-content:space-between;padding:3px 7px;user-select:none;-webkit-user-select:none;overflow:hidden;touch-action:none}
+.tl-video-card:active{cursor:grabbing}
 .tl-video-card.active{background:#FFFFFF;border:2px solid #2563EB;box-shadow:0 1px 3px rgba(37,99,235,0.18)}
 .tl-video-card.active:hover{border-color:#1D4ED8;box-shadow:0 2px 6px rgba(37,99,235,0.28)}
 .tl-video-card.deleted{background:repeating-linear-gradient(45deg,#FEF2F2,#FEF2F2 7px,#FEE2E2 7px,#FEE2E2 14px);border:2px dashed #EF4444;opacity:0.92}
@@ -715,12 +717,19 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .tl-handle.left{left:-6px;border-radius:4px 0 0 4px}
 .tl-handle.right{right:-6px;border-radius:0 4px 4px 0}
 
-/* Playhead / Split Pointer */
-.tl-pointer{position:absolute;top:0;bottom:0;width:0;z-index:15;touch-action:none;transform:translateX(-50%);pointer-events:none}
+/* Playhead / Split Pointer Line & Top Draggable Needle */
+.tl-pointer{position:absolute;top:0;bottom:0;width:0;z-index:20;touch-action:none;transform:translateX(-50%);pointer-events:none}
 .tl-pointer-line{position:absolute;top:0;bottom:0;left:0;width:2px;background:#2563EB;box-shadow:0 0 4px rgba(37,99,235,0.6);pointer-events:none}
-.tl-pointer-cap{position:absolute;top:0;left:0;transform:translateX(-50%);width:26px;height:22px;cursor:ew-resize;pointer-events:auto;display:flex;flex-direction:column;align-items:center;z-index:16}
-.tl-needle-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:3px;background:#0F172A;color:#FFFFFF;font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,0.25)}
-.tl-needle-shape{width:14px;height:15px;background:#2563EB;clip-path:polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%)}
+.tl-pointer-cap{position:absolute;top:0;left:0;transform:translateX(-50%);width:32px;height:24px;cursor:ew-resize;pointer-events:auto;display:flex;flex-direction:column;align-items:center;z-index:22;touch-action:none}
+.tl-needle-shape{width:20px;height:18px;background:#2563EB;border-radius:2px 2px 0 0;clip-path:polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);display:flex;align-items:flex-start;justify-content:center;padding-top:2px;box-shadow:0 2px 5px rgba(0,0,0,0.3);transition:background .12s,transform .12s;cursor:ew-resize}
+.tl-pointer-cap:hover .tl-needle-shape{background:#1D4ED8;transform:scale(1.1)}
+.tl-needle-grip{width:2px;height:6px;background:#FFFFFF;box-shadow:3px 0 0 #FFFFFF,-3px 0 0 #FFFFFF;border-radius:1px}
+.tl-needle-badge{position:absolute;top:22px;left:50%;transform:translateX(-50%);background:#0F172A;color:#FFFFFF;font-size:10px;font-weight:700;font-family:monospace;padding:1px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,0.3);z-index:25}
+
+/* Dialog Title Bar (Draggable Whole Window) */
+.dlg-title-bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:#F1F5F9;border-bottom:1px solid #E2E8F0;cursor:move;user-select:none;-webkit-user-select:none;touch-action:none}
+.dlg-drag-hint{font-size:11px;font-weight:600;color:#475569;display:inline-flex;align-items:center;gap:6px}
+.dlg-drag-hint i{font-style:normal;color:#94A3B8;font-size:10px;font-weight:normal}
 
 /* Progress Bar */
 .tl-progress-bar{position:relative;height:3px;background:#E2E8F0;border-radius:2px;overflow:hidden}
@@ -2925,7 +2934,19 @@ async function ytCookiesCard(logo) {
 async function saveSettings() { const d = {}; $$("#sform [data-s]").forEach(i => d[i.dataset.s] = i.value); await send("/api/settings", d, "PUT"); }
 
 /* ============================================================ clip editor */
-function openClip(jid, cid) { D.jid = jid; D.cid = cid; D.sig = ""; drawClipDlg(true); $("#clipdlg").showModal(); }
+function openClip(jid, cid) {
+  D.jid = jid;
+  D.cid = cid;
+  D.sig = "";
+  drawClipDlg(true);
+  const dlg = $("#clipdlg");
+  dlg.style.position = "";
+  dlg.style.margin = "";
+  dlg.style.left = "";
+  dlg.style.top = "";
+  dlg.showModal();
+  initDialogDrag();
+}
 function drawClipDlg(full) {
   const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid), dlg = $("#clipdlg");
   if (!c) { if (dlg.open) dlg.close(); return; }
@@ -2951,7 +2972,15 @@ function drawClipDlg(full) {
     : c.status === "error" ? `<div class="err" style="padding:20px;text-align:center">${esc(c.error || "Could not make this clip.")}</div>`
     : `<span class="making">${c.cancel ? "Cancelling…" : c.status === "rendering" ? "Making this clip…" : "Waiting its turn…"}</span>${c.cancel ? "" : `<button class="btn" data-act="cancelclip" data-j="${j.id}" data-c="${esc(c.id)}" style="margin-top:14px">${ic("x")}Cancel</button>`}`;
   if (full) {
-    dlg.innerHTML = `<div class="editor"><div class="stage" id="stage">${stage}</div>
+    dlg.innerHTML = `<div class="editor">
+      <div class="dlg-title-bar" id="dlg_drag_bar" title="Drag to move window">
+        <span class="dlg-drag-hint">
+          <svg viewBox="0 0 256 256" style="width:13px;height:13px;fill:currentColor" aria-hidden="true"><path d="M128,24a8,8,0,0,1,8,8V56h24a8,8,0,0,1,0,16H136V96a8,8,0,0,1-16,0V72H96a8,8,0,0,1,0-16h24V32A8,8,0,0,1,128,24Zm0,136a8,8,0,0,1,8,8v24h24a8,8,0,0,1,0,16H136v24a8,8,0,0,1-16,0V208H96a8,8,0,0,1,0-16h24V168A8,8,0,0,1,128,160ZM40,120H64v24a8,8,0,0,1-16,0V136H32a8,8,0,0,1,0-16H48v-8a8,8,0,0,1,16,0v8ZM224,120a8,8,0,0,1,0,16H208v8a8,8,0,0,1-16,0v-24h24A8,8,0,0,1,224,120Z"/></svg>
+          <b>Clip Editor</b> · <i>Drag header to move window</i>
+        </span>
+        <button type="button" class="btn icon ghost" data-act="closedlg" aria-label="Close" style="width:24px;height:24px;padding:0">${ic("x")}</button>
+      </div>
+      <div class="stage" id="stage">${stage}</div>
       <div class="panel">
         <div class="job-head" style="margin:0"><div><span class="badge ${scoreCls(c.score)}" style="position:static">${c.judges ? "Words " + c.judges.words + (c.judges.reaction ? " · Reaction " + c.judges.reaction : "") : c.score ? "Score " + c.score : "Clipped by hand"}</span>
           <p class="sub" style="margin-top:8px">${esc(c.reason || "")}</p>${c.voiceover ? `<p class="sub" style="margin-top:8px"><b>Voice-over:</b> ${esc(c.voiceover)}</p>` : ""}</div><button class="btn icon ghost" data-act="closedlg" aria-label="Close">${ic("x")}</button></div>
@@ -3010,9 +3039,9 @@ function drawClipDlg(full) {
                   <!-- The Draggable Split Pointer Line -->
                   <div class="tl-pointer" id="tl_pointer">
                     <div class="tl-pointer-line"></div>
-                    <div class="tl-pointer-cap" id="tl_pointer_cap" title="Drag to scrub / seek video">
+                    <div class="tl-pointer-cap" id="tl_pointer_cap" title="Drag top of line to move split line">
+                      <div class="tl-needle-shape"><div class="tl-needle-grip"></div></div>
                       <div class="tl-needle-badge" id="tl_needle_badge">0:00</div>
-                      <div class="tl-needle-shape"></div>
                     </div>
                   </div>
                 </div>
@@ -3650,8 +3679,10 @@ function initTimeline(j, c) {
   }
 
   let initSegments = null;
+  let didDragMove = false;
   function onPointerDown(e, type) {
     dragType = type;
+    didDragMove = false;
     startX = e.clientX;
     initStart = start;
     initEnd = end;
@@ -3666,6 +3697,7 @@ function initTimeline(j, c) {
 
   function onPointerMove(e) {
     if (!dragType) return;
+    if (Math.abs(e.clientX - startX) > 2) didDragMove = true;
     const rect = track.getBoundingClientRect();
     const dx = e.clientX - startX;
     const dt = (dx / rect.width) * span;
@@ -3688,6 +3720,29 @@ function initTimeline(j, c) {
         stageVideo.currentTime = end;
         stageVideo.pause();
       }
+    } else if (dragType === "range") {
+      const dur = initEnd - initStart;
+      let ns = initStart + dt;
+      if (ns < minTime) ns = minTime;
+      if (ns + dur > maxTime) ns = maxTime - dur;
+      const actualDt = ns - initStart;
+      setTimes(ns, ns + dur, false);
+      if (initSegments) {
+        segments.forEach((s, idx) => {
+          if (initSegments[idx]) {
+            s.start = Math.round((initSegments[idx].start + actualDt) * 100) / 100;
+            s.end = Math.round((initSegments[idx].end + actualDt) * 100) / 100;
+          }
+        });
+        renderSegments();
+      }
+      if (stageVideo) {
+        if (!isReview) switchToReview(ns, false);
+        stageVideo.currentTime = ns;
+        stageVideo.pause();
+      }
+      syncPlayBtn();
+      updateVisuals(ns);
     } else if (dragType === "pointer") {
       const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
       const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
@@ -3722,6 +3777,7 @@ function initTimeline(j, c) {
         stageVideo.pause();
       }
       syncPlayBtn();
+      setTimeout(() => { didDragMove = false; }, 60);
     }
   }
 
@@ -3729,6 +3785,24 @@ function initTimeline(j, c) {
   hRight?.addEventListener("pointerdown", e => onPointerDown(e, "right"));
   pointerCap?.addEventListener("pointerdown", e => onPointerDown(e, "pointer"));
   pointer?.addEventListener("pointerdown", e => onPointerDown(e, "pointer"));
+  clipsTrack?.addEventListener("pointerdown", e => {
+    if (e.target.closest("[data-act-del], [data-act-res]")) return;
+    onPointerDown(e, "range");
+  });
+  ticks?.addEventListener("pointerdown", e => {
+    onPointerDown(e, "pointer");
+    const rect = track.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
+    pointerTime = Math.round(t * 100) / 100;
+    if (stageVideo) {
+      if (!isReview) switchToReview(pointerTime, false);
+      stageVideo.currentTime = pointerTime;
+      stageVideo.pause();
+    }
+    syncPlayBtn();
+    updateVisuals(pointerTime);
+  });
 
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
@@ -3767,7 +3841,7 @@ function initTimeline(j, c) {
   }
 
   track?.addEventListener("click", e => {
-    if (e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res") || dragType) return;
+    if (didDragMove || e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res") || dragType) return;
     const rect = track.getBoundingClientRect();
     const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
     const clickTime = Math.round(fromPct(clickPct) * 100) / 100;
@@ -3864,11 +3938,69 @@ function initTimeline(j, c) {
     }, 40);
   }
 }
+function initDialogDrag() {
+  const bar = $("#dlg_drag_bar");
+  const dlg = $("#clipdlg");
+  if (!bar || !dlg) return;
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+
+  bar.onpointerdown = e => {
+    if (e.target.closest("button, a, input")) return;
+    isDragging = true;
+    const rect = dlg.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    initialLeft = rect.left;
+    initialTop = rect.top;
+    dlg.style.position = "fixed";
+    dlg.style.margin = "0";
+    dlg.style.left = initialLeft + "px";
+    dlg.style.top = initialTop + "px";
+    if (bar.setPointerCapture) {
+      try { bar.setPointerCapture(e.pointerId); } catch {}
+    }
+    e.preventDefault();
+  };
+
+  bar.onpointermove = e => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const maxLeft = Math.max(0, window.innerWidth - dlg.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - dlg.offsetHeight);
+    const newLeft = Math.max(0, Math.min(maxLeft, initialLeft + dx));
+    const newTop = Math.max(0, Math.min(maxTop, initialTop + dy));
+    dlg.style.left = newLeft + "px";
+    dlg.style.top = newTop + "px";
+  };
+
+  const stopDrag = e => {
+    if (isDragging) {
+      isDragging = false;
+      if (bar.releasePointerCapture) {
+        try { bar.releasePointerCapture(e.pointerId); } catch {}
+      }
+    }
+  };
+  bar.onpointerup = stopDrag;
+  bar.onpointercancel = stopDrag;
+}
+
 function postText() {   // the post text as it is in the clip editor right now
   const v = k => $(`#clipdlg [data-f="${k}"]`).value;
   return {title: v("title"), description: v("description"), hashtags: v("hashtags").split(/\s+/).map(h => h.replace(/^#+/, "")).filter(Boolean)};
 }
-$("#clipdlg").addEventListener("close", () => { $("#clipdlg").innerHTML = ""; D.jid = null; });
+$("#clipdlg").addEventListener("close", () => {
+  const dlg = $("#clipdlg");
+  dlg.innerHTML = "";
+  dlg.style.position = "";
+  dlg.style.margin = "";
+  dlg.style.left = "";
+  dlg.style.top = "";
+  D.jid = null;
+});
 $("#clipdlg").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
 /* ============================================================ render + polling */
