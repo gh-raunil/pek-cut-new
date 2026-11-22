@@ -663,44 +663,67 @@ dialog::backdrop{background:rgba(14,12,11,.42);animation:fadein .16s ease}
 .tl-viewport::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.18);border-radius:3px}
 .tl-viewport::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.32)}
 
-.tl-track{position:relative;height:46px;min-width:100%;background:#F8F9FA;cursor:pointer;touch-action:none}
-.tl-ticks{position:absolute;inset:0;pointer-events:none}
+.tl-track{position:relative;height:68px;min-width:100%;background:#F8F9FA;cursor:crosshair;touch-action:none}
+.tl-ticks{position:absolute;left:0;right:0;top:0;height:18px;pointer-events:none}
 .tl-tick-item{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;transform:translateX(-50%);pointer-events:none}
-.tl-tick-line{width:1px;height:8px;background:rgba(0,0,0,0.18)}
+.tl-tick-line{width:1px;height:6px;background:rgba(0,0,0,0.22)}
 .tl-tick-time{font-size:9px;color:var(--dim,#666);font-family:monospace;line-height:1}
 
-.tl-dim{position:absolute;top:0;bottom:0;background:rgba(0,0,0,0.06);pointer-events:none;z-index:1}
+.tl-dim{position:absolute;top:18px;bottom:3px;background:rgba(0,0,0,0.07);pointer-events:none;z-index:2}
 .tl-dim.left{left:0}
 .tl-dim.right{right:0}
-.tl-range{position:absolute;top:0;bottom:0;border:2px solid #18120e;border-radius:8px;background:transparent;box-sizing:border-box;cursor:grab;z-index:2;touch-action:none;overflow:hidden}
-.tl-range:active{cursor:grabbing}
-.tl-seg-blocks{position:absolute;inset:0;pointer-events:none;z-index:1}
-.tl-seg-block{position:absolute;top:0;bottom:0;box-sizing:border-box;pointer-events:none;transition:background-color .15s ease}
-.tl-seg-block.kept{background:rgba(255,229,0,0.28)}
-.tl-seg-block.deleted{background:repeating-linear-gradient(45deg,rgba(239,68,68,0.22),rgba(239,68,68,0.22) 5px,rgba(239,68,68,0.38) 5px,rgba(239,68,68,0.38) 10px);border-left:1px dashed #DC2626;border-right:1px dashed #DC2626}
-.tl-cut-divider{position:absolute;top:0;bottom:0;width:2px;background:#18120e;z-index:2;pointer-events:none}
-.tl-cut-divider::before{content:"✂";position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:9px;line-height:1}
+
+/* Separated Video Clips Track */
+.tl-clips-track{position:absolute;left:0;right:0;top:18px;bottom:4px;pointer-events:auto;z-index:3}
+.tl-video-card{position:absolute;top:0;bottom:0;border-radius:6px;box-sizing:border-box;pointer-events:auto;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;justify-content:space-between;padding:3px 6px;user-select:none;-webkit-user-select:none}
+.tl-video-card.active{background:#FFFFFF;border:2px solid #2563EB;box-shadow:0 1px 4px rgba(37,99,235,0.2)}
+.tl-video-card.active:hover{border-color:#1D4ED8;box-shadow:0 2px 7px rgba(37,99,235,0.32)}
+.tl-video-card.deleted{background:repeating-linear-gradient(45deg,#FEE2E2,#FEE2E2 6px,#FECACA 6px,#FECACA 12px);border:2px dashed #DC2626;opacity:0.88}
+.tl-vcard-top{display:flex;align-items:center;justify-content:space-between;gap:4px;line-height:1}
+.tl-vcard-title{font-size:11px;font-weight:700;color:#1E3A8A;display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-vcard-title.cut{color:#991B1B}
+.tl-vcard-del{border:0;background:rgba(220,38,38,0.14);color:#DC2626;width:18px;height:18px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0;line-height:1}
+.tl-vcard-del:hover{background:#DC2626;color:#FFFFFF}
+.tl-vcard-res{border:0;background:#DC2626;color:#FFFFFF;border-radius:4px;cursor:pointer;font-size:10px;font-weight:700;padding:2px 5px;line-height:1}
+.tl-vcard-res:hover{background:#B91C1C}
+.tl-vcard-bot{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-family:monospace;color:#4B5563;line-height:1}
+.tl-vcard-dur{font-weight:700;color:#111}
+
+/* Split Seam between separated clips */
+.tl-split-seam{position:absolute;top:16px;bottom:2px;width:2px;background:#18120e;z-index:5;pointer-events:none;transform:translateX(-50%)}
+.tl-seam-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#18120e;color:#FFE500;display:grid;place-items:center;font-size:9px;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+
+/* Left and Right Trim Handles */
+.tl-handle{position:absolute;top:calc(18px + (50px / 2));transform:translateY(-50%);width:16px;height:38px;background:#FFFFFF;border:2px solid #18120e;border-radius:6px;cursor:ew-resize;display:grid;place-items:center;box-shadow:0 1px 5px rgba(0,0,0,0.25);z-index:8;touch-action:none}
+.tl-handle::after{content:"";width:2px;height:14px;background:#18120e;box-shadow:3px 0 0 #18120e,-3px 0 0 #18120e;border-radius:1px}
+.tl-handle.left{left:-8px}
+.tl-handle.right{right:-8px}
+
+/* Interactive Split Pointer Line */
+.tl-pointer{position:absolute;top:0;bottom:0;width:0;z-index:15;touch-action:none;transform:translateX(-50%);pointer-events:none}
+.tl-pointer-line{position:absolute;top:0;bottom:0;left:0;width:2px;background:#2563EB;box-shadow:0 0 6px rgba(37,99,235,0.7);pointer-events:none}
+.tl-pointer-cap{position:absolute;top:0;left:0;transform:translateX(-50%);width:24px;height:22px;cursor:ew-resize;pointer-events:auto;display:flex;flex-direction:column;align-items:center;z-index:2}
+.tl-needle-shape{width:18px;height:14px;background:#2563EB;border-radius:3px 3px 0 0;clip-path:polygon(0 0, 100% 0, 100% 60%, 50% 100%, 0 60%);box-shadow:0 2px 5px rgba(0,0,0,0.3)}
+.tl-needle-badge{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:2px;background:#1E293B;color:#FFFFFF;font-size:10px;font-weight:700;font-family:monospace;padding:2px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,0.25)}
+.tl-needle-split-btn{position:absolute;top:21px;left:6px;background:#2563EB;color:#FFFFFF;border:1.5px solid #FFFFFF;border-radius:999px;font-size:10px;font-weight:700;padding:2px 8px;box-shadow:0 3px 8px rgba(0,0,0,0.3);cursor:pointer;white-space:nowrap;pointer-events:auto;display:inline-flex;align-items:center;gap:3px;z-index:25;transition:transform .1s ease,background .15s ease}
+.tl-needle-split-btn:hover{background:#1D4ED8;transform:scale(1.05)}
+.tl-needle-split-btn:active{transform:scale(0.96)}
 
 .tl-cut-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line-2,#e5e7eb)}
 .tl-cut-btns{display:flex;align-items:center;gap:6px}
-.tl-cut-btn{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--line-2,#d1d5db);background:var(--muted,#f3f4f6);color:var(--text,#111);font-size:11px;font-weight:600;cursor:pointer}
+.tl-cut-btn{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2,#d1d5db);background:var(--muted,#f3f4f6);color:var(--text,#111);font-size:11px;font-weight:600;cursor:pointer}
 .tl-cut-btn:hover{background:var(--line,#e5e7eb);color:var(--brand-ink,#000)}
-.tl-cut-btn.split{border-color:var(--brand,#FFE500);background:#FFFBE6}
-.tl-cut-btn.split:hover{background:#FFF3C4}
+.tl-cut-btn.split{border-color:#2563EB;background:#EFF6FF;color:#1D4ED8}
+.tl-cut-btn.split:hover{background:#DBEAFE}
 .tl-seg-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
-.tl-seg-chip{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:6px;font-size:11px;font-family:monospace;background:#FFFFFF;border:1px solid var(--line-2,#d1d5db);color:var(--text,#111);user-select:none;transition:all .15s ease}
+.tl-seg-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;font-size:11px;font-family:monospace;background:#FFFFFF;border:1px solid var(--line-2,#d1d5db);color:var(--text,#111);user-select:none;transition:all .15s ease}
 .tl-seg-chip.deleted{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
 .tl-seg-chip .seg-del{border:0;background:transparent;color:#DC2626;cursor:pointer;font-weight:700;font-size:11px;padding:0 3px;border-radius:3px}
 .tl-seg-chip .seg-del:hover{background:rgba(220,38,38,0.15)}
 .tl-seg-chip .seg-res{border:0;background:transparent;color:#16A34A;cursor:pointer;font-weight:700;font-size:11px;padding:0 3px;border-radius:3px}
 .tl-seg-chip .seg-res:hover{background:rgba(22,163,74,0.15)}
-.tl-handle{position:absolute;top:50%;transform:translateY(-50%);width:16px;height:34px;background:#FFFFFF;border:1.5px solid #18120e;border-radius:6px;cursor:ew-resize;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,0.15);z-index:3;touch-action:none}
-.tl-handle::after{content:"";width:2px;height:12px;background:#18120e;box-shadow:3px 0 0 #18120e,-3px 0 0 #18120e;border-radius:1px}
-.tl-handle.left{left:-8px}
-.tl-handle.right{right:-8px}
-.tl-playhead{position:absolute;top:0;bottom:0;width:3px;background:#FF8B33;box-shadow:0 0 0 1px rgba(0,0,0,0.2);z-index:4;pointer-events:none;transform:translateX(-50%)}
 .tl-progress-bar{position:relative;height:4px;background:var(--line,#e2e8f0);border-radius:2px;overflow:hidden;margin-top:5px}
-.tl-progress-fill{position:absolute;left:0;top:0;bottom:0;background:#FF8B33;border-radius:2px;width:0%;transition:width 0.05s linear}
+.tl-progress-fill{position:absolute;left:0;top:0;bottom:0;background:#2563EB;border-radius:2px;width:0%;transition:width 0.05s linear}
 .tl-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--dim,#666);margin-top:2px}
 .tl-fine{display:flex;align-items:center;gap:3px}
 .tl-fine input{width:64px;padding:2px 4px;height:24px;border:1px solid var(--line-2,#d1d5db);border-radius:6px;background:#FFFFFF;color:var(--text,#111);font-size:11px;text-align:center;font-family:monospace}
@@ -2930,13 +2953,19 @@ function drawClipDlg(full) {
                 <div class="tl-track" id="tl_track">
                   <div class="tl-ticks" id="tl_ticks"></div>
                   <div class="tl-dim left" id="tl_dim_l"></div>
-                  <div class="tl-range" id="tl_range">
-                    <div class="tl-seg-blocks" id="tl_seg_blocks"></div>
-                    <div class="tl-handle left" id="tl_h_left" title="Drag to adjust start"></div>
-                    <div class="tl-playhead" id="tl_playhead"></div>
-                    <div class="tl-handle right" id="tl_h_right" title="Drag to adjust end"></div>
-                  </div>
+                  <div class="tl-clips-track" id="tl_clips_track"></div>
+                  <div class="tl-handle left" id="tl_h_left" title="Drag to adjust clip start"></div>
+                  <div class="tl-handle right" id="tl_h_right" title="Drag to adjust clip end"></div>
                   <div class="tl-dim right" id="tl_dim_r"></div>
+                  <!-- The Draggable Split Pointer Line (as requested) -->
+                  <div class="tl-pointer" id="tl_pointer">
+                    <div class="tl-pointer-line"></div>
+                    <div class="tl-pointer-cap" id="tl_pointer_cap" title="Drag to scrub / position split line">
+                      <div class="tl-needle-badge" id="tl_needle_badge">0:00</div>
+                      <div class="tl-needle-shape"></div>
+                      <button type="button" class="tl-needle-split-btn" id="tl_needle_split_btn" title="Split at this line">✂ Split</button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="tl-progress-bar"><div class="tl-progress-fill" id="tl_prog"></div></div>
@@ -3000,10 +3029,13 @@ function initTimeline(j, c) {
   const viewport = $("#tl_viewport");
   const track = $("#tl_track");
   const ticks = $("#tl_ticks");
-  const range = $("#tl_range");
+  const clipsTrack = $("#tl_clips_track");
   const hLeft = $("#tl_h_left");
   const hRight = $("#tl_h_right");
-  const playhead = $("#tl_playhead");
+  const pointer = $("#tl_pointer");
+  const pointerCap = $("#tl_pointer_cap");
+  const needleBadge = $("#tl_needle_badge");
+  const needleSplitBtn = $("#tl_needle_split_btn");
   const progFill = $("#tl_prog");
   const dimL = $("#tl_dim_l");
   const dimR = $("#tl_dim_r");
@@ -3027,6 +3059,7 @@ function initTimeline(j, c) {
 
   let start = Math.max(minTime, Math.min(maxTime - 3, Number(inStart?.value) || c.start));
   let end = Math.min(maxTime, Math.max(start + 3, Number(inEnd?.value) || c.end));
+  let pointerTime = start;
   let isReview = false;
   let isLoop = true;
   let dragType = null;
@@ -3045,7 +3078,6 @@ function initTimeline(j, c) {
   let segments = [];
   let nextSegId = 1;
   const inSegments = $("#tl_in_segments");
-  const segBlocksWrap = $("#tl_seg_blocks");
   const segListWrap = $("#tl_seg_list");
   const splitBtn = $("#tl_split_btn");
   const splitTLbl = $("#tl_split_t_lbl");
@@ -3074,20 +3106,40 @@ function initTimeline(j, c) {
   }
 
   function renderSegments() {
-    const rangeSpan = Math.max(0.1, end - start);
-    if (segBlocksWrap) {
-      let bHtml = "";
+    if (clipsTrack) {
+      let html = "";
+      let partNum = 1;
       segments.forEach((s, idx) => {
-        const lPct = Math.max(0, Math.min(100, ((s.start - start) / rangeSpan) * 100));
-        const rPct = Math.max(0, Math.min(100, ((s.end - start) / rangeSpan) * 100));
+        const lPct = toPct(s.start);
+        const rPct = toPct(s.end);
         const wPct = Math.max(0, rPct - lPct);
-        const cls = s.deleted ? "deleted" : "kept";
-        bHtml += `<div class="tl-seg-block ${cls}" style="left:${lPct}%;width:${wPct}%;" title="${s.deleted ? 'Cut: ' : 'Kept: '}${fmt(s.start)}–${fmt(s.end)}"></div>`;
+        const dur = Math.max(0, s.end - s.start);
+        const isDel = s.deleted;
+        const cls = isDel ? "deleted" : "active";
+
+        html += `<div class="tl-video-card ${cls}" data-seg-id="${s.id}" style="left:${lPct}%;width:${wPct}%;" title="${isDel ? 'Cut out' : 'Video ' + partNum}: ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)">
+          <div class="tl-vcard-top">
+            <span class="tl-vcard-title ${isDel ? 'cut' : ''}">
+              ${isDel ? `<strike>Cut (${dur.toFixed(1)}s)</strike>` : `🎬 <b>Video ${partNum}</b>`}
+            </span>
+            ${isDel 
+              ? `<button type="button" class="tl-vcard-res" data-act-res="${s.id}" title="Restore this video">↺</button>` 
+              : `<button type="button" class="tl-vcard-del" data-act-del="${s.id}" title="Delete this video">✕</button>`}
+          </div>
+          <div class="tl-vcard-bot">
+            <span class="tl-vcard-dur">${dur.toFixed(1)}s</span>
+            <span class="tl-vcard-range">${fmt(s.start)}–${fmt(s.end)}</span>
+          </div>
+        </div>`;
+
         if (idx > 0) {
-          bHtml += `<div class="tl-cut-divider" style="left:${lPct}%;"></div>`;
+          html += `<div class="tl-split-seam" style="left:${lPct}%;" title="Split point: ${fmt(s.start)}">
+            <span class="tl-seam-badge">✂</span>
+          </div>`;
         }
+        if (!isDel) partNum++;
       });
-      segBlocksWrap.innerHTML = bHtml;
+      clipsTrack.innerHTML = html;
     }
 
     if (segListWrap) {
@@ -3098,12 +3150,12 @@ function initTimeline(j, c) {
         if (s.deleted) {
           listHtml += `<div class="tl-seg-chip deleted" data-seg-id="${s.id}">
             <span><strike>Cut: ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</strike></span>
-            <button type="button" class="seg-res" data-act-res="${s.id}" title="Restore this cut part">↺ Restore</button>
+            <button type="button" class="seg-res" data-act-res="${s.id}" title="Restore this cut video">↺ Restore</button>
           </div>`;
         } else {
           listHtml += `<div class="tl-seg-chip" data-seg-id="${s.id}">
-            <span><b>Part ${partNum++}:</b> ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</span>
-            <button type="button" class="seg-del" data-act-del="${s.id}" title="Delete this part from clip">✕ Delete</button>
+            <span><b>Video ${partNum++}:</b> ${fmt(s.start)}–${fmt(s.end)} (${dur.toFixed(1)}s)</span>
+            <button type="button" class="seg-del" data-act-del="${s.id}" title="Delete this video from clip">✕ Delete</button>
           </div>`;
         }
       });
@@ -3117,7 +3169,7 @@ function initTimeline(j, c) {
       durLbl.innerHTML = cutCount > 0 ? `${keptDur.toFixed(1)}s <small style="font-weight:normal;opacity:0.75">(${cutCount} cut)</small>` : `${keptDur.toFixed(1)}s`;
     }
     if (keptLbl) {
-      keptLbl.innerHTML = cutCount > 0 ? `Kept: <b>${keptDur.toFixed(1)}s</b> (${cutCount} part${cutCount>1?'s':''} cut out)` : `Kept: <b>${keptDur.toFixed(1)}s</b> (full clip)`;
+      keptLbl.innerHTML = cutCount > 0 ? `Kept: <b>${keptDur.toFixed(1)}s</b> (${cutCount} video${cutCount>1?'s':''} cut out)` : `Kept: <b>${keptDur.toFixed(1)}s</b> (${keptSegs.length} video${keptSegs.length>1?'s':''})`;
     }
     if (inSegments) {
       inSegments.value = cutCount > 0 ? JSON.stringify(keptSegs.map(s => [Math.round(s.start * 100) / 100, Math.round(s.end * 100) / 100])) : "";
@@ -3126,9 +3178,9 @@ function initTimeline(j, c) {
 
   function splitAt(t) {
     t = Math.round(t * 100) / 100;
-    const target = segments.find(s => !s.deleted && t >= s.start + 0.4 && t <= s.end - 0.4);
+    const target = segments.find(s => !s.deleted && t >= s.start + 0.25 && t <= s.end - 0.25);
     if (!target) {
-      toast("Scrub the playhead inside a kept part (at least 0.4s from edges) to split", "bad");
+      toast("Move the pointer line inside a video (at least 0.25s from its ends) to split", "bad");
       return;
     }
     const idx = segments.indexOf(target);
@@ -3136,7 +3188,8 @@ function initTimeline(j, c) {
     const s2 = { id: nextSegId++, start: t, end: target.end, deleted: false };
     segments.splice(idx, 1, s1, s2);
     renderSegments();
-    toast(`Split clip at ${fmt(t)}. Click '✕ Delete' on the part you want to remove.`, "ok");
+    updateVisuals(t);
+    toast(`Split video into two parts at ${fmt(t)}! Move the pointer line to split again anytime.`, "ok");
   }
 
   function deleteSegment(id) {
@@ -3323,14 +3376,12 @@ function initTimeline(j, c) {
   function updateVisuals(currTime) {
     const lPct = toPct(start);
     const rPct = toPct(end);
-    const wPct = Math.max(0, rPct - lPct);
 
     if (dimL) dimL.style.width = lPct + "%";
-    if (range) {
-      range.style.left = lPct + "%";
-      range.style.width = wPct + "%";
-    }
     if (dimR) dimR.style.width = (100 - rPct) + "%";
+
+    if (hLeft) hLeft.style.left = lPct + "%";
+    if (hRight) hRight.style.left = rPct + "%";
 
     const dur = Math.max(0, end - start);
     if (durLbl) durLbl.textContent = dur.toFixed(1) + "s";
@@ -3340,17 +3391,20 @@ function initTimeline(j, c) {
     if (inStart && inStart !== document.activeElement) inStart.value = start.toFixed(2);
     if (inEnd && inEnd !== document.activeElement) inEnd.value = end.toFixed(2);
 
-    const ct = currTime != null ? currTime : (stageVideo ? stageVideo.currentTime : start);
+    const ct = currTime != null ? currTime : (stageVideo ? stageVideo.currentTime : pointerTime);
+    pointerTime = ct;
     if (splitTLbl) splitTLbl.textContent = fmt(ct);
-    if (playhead) {
-      const phRelPct = dur > 0 ? Math.max(0, Math.min(100, ((ct - start) / dur) * 100)) : 0;
-      playhead.style.left = phRelPct + "%";
+    if (needleBadge) needleBadge.textContent = fmt(ct);
+    if (needleSplitBtn) needleSplitBtn.title = "Split at " + fmt(ct);
+
+    if (pointer) {
+      pointer.style.left = toPct(ct) + "%";
     }
 
     if (progFill) {
       const progRelPct = dur > 0 ? Math.max(0, Math.min(100, ((ct - start) / dur) * 100)) : 0;
       progFill.style.left = lPct + "%";
-      progFill.style.width = ((wPct * progRelPct) / 100) + "%";
+      progFill.style.width = (((rPct - lPct) * progRelPct) / 100) + "%";
     }
 
     if (isReview && stageBadge) {
@@ -3506,26 +3560,15 @@ function initTimeline(j, c) {
         if (!isReview) switchToReview(end, false);
         stageVideo.currentTime = end;
       }
-    } else if (dragType === "range") {
-      const dur = initEnd - initStart;
-      let ns = initStart + dt;
-      if (ns < minTime) ns = minTime;
-      if (ns + dur > maxTime) ns = maxTime - dur;
-      const actualDt = ns - initStart;
-      setTimes(ns, ns + dur, false);
-      if (initSegments) {
-        segments.forEach((s, idx) => {
-          if (initSegments[idx]) {
-            s.start = Math.round((initSegments[idx].start + actualDt) * 100) / 100;
-            s.end = Math.round((initSegments[idx].end + actualDt) * 100) / 100;
-          }
-        });
-        renderSegments();
-      }
+    } else if (dragType === "pointer") {
+      const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+      const t = Math.max(minTime, Math.min(maxTime, fromPct(pct)));
+      pointerTime = Math.round(t * 100) / 100;
       if (stageVideo) {
-        if (!isReview) switchToReview(ns, false);
-        stageVideo.currentTime = ns;
+        if (!isReview) switchToReview(pointerTime, false);
+        stageVideo.currentTime = pointerTime;
       }
+      updateVisuals(pointerTime);
     }
 
     if (viewport) {
@@ -3543,8 +3586,13 @@ function initTimeline(j, c) {
       if (e.target && e.target.releasePointerCapture) {
         try { e.target.releasePointerCapture(e.pointerId); } catch {}
       }
+      const prevType = dragType;
       dragType = null;
-      if (isReview && stageVideo) {
+      if (prevType === "pointer") {
+        if (stageVideo && isReview) {
+          stageVideo.currentTime = pointerTime;
+        }
+      } else if (isReview && stageVideo) {
         stageVideo.currentTime = start;
         stageVideo.play().catch(() => {});
       }
@@ -3553,9 +3601,13 @@ function initTimeline(j, c) {
 
   hLeft?.addEventListener("pointerdown", e => onPointerDown(e, "left"));
   hRight?.addEventListener("pointerdown", e => onPointerDown(e, "right"));
-  range?.addEventListener("pointerdown", e => {
-    if (e.target === hLeft || e.target === hRight) return;
-    onPointerDown(e, "range");
+  pointerCap?.addEventListener("pointerdown", e => {
+    if (e.target.closest(".tl-needle-split-btn, #tl_needle_split_btn")) return;
+    onPointerDown(e, "pointer");
+  });
+  pointer?.addEventListener("pointerdown", e => {
+    if (e.target.closest(".tl-needle-split-btn, #tl_needle_split_btn")) return;
+    onPointerDown(e, "pointer");
   });
 
   window.addEventListener("pointermove", onPointerMove);
@@ -3570,12 +3622,28 @@ function initTimeline(j, c) {
   $("#clipdlg")?.addEventListener("close", cleanup);
 
   track?.addEventListener("click", e => {
-    if (e.target === hLeft || e.target === hRight || e.target === range || dragType) return;
+    if (e.target === hLeft || e.target === hRight || e.target.closest(".tl-vcard-del, .tl-vcard-res, .tl-needle-split-btn, #tl_needle_split_btn") || dragType) return;
     const rect = track.getBoundingClientRect();
     const clickPct = ((e.clientX - rect.left) / rect.width) * 100;
-    const clickTime = fromPct(clickPct);
-    switchToReview(clickTime, true);
+    const clickTime = Math.round(fromPct(clickPct) * 100) / 100;
+    pointerTime = Math.max(minTime, Math.min(maxTime, clickTime));
+    switchToReview(pointerTime, true);
   });
+
+  if (clipsTrack) {
+    clipsTrack.onclick = e => {
+      const delBtn = e.target.closest("[data-act-del]");
+      if (delBtn) {
+        e.stopPropagation();
+        return deleteSegment(Number(delBtn.dataset.actDel));
+      }
+      const resBtn = e.target.closest("[data-act-res]");
+      if (resBtn) {
+        e.stopPropagation();
+        return restoreSegment(Number(resBtn.dataset.actRes));
+      }
+    };
+  }
 
   box.querySelectorAll("[data-step-s]").forEach(btn => {
     btn.onclick = () => {
@@ -3597,9 +3665,16 @@ function initTimeline(j, c) {
     inEnd.onchange = () => setTimes(start, Number(inEnd.value), true);
   }
 
+  if (needleSplitBtn) {
+    needleSplitBtn.onclick = (e) => {
+      e.stopPropagation();
+      const ct = stageVideo ? stageVideo.currentTime : pointerTime;
+      splitAt(ct);
+    };
+  }
   if (splitBtn) {
     splitBtn.onclick = () => {
-      const ct = stageVideo ? stageVideo.currentTime : start;
+      const ct = stageVideo ? stageVideo.currentTime : pointerTime;
       splitAt(ct);
     };
   }
@@ -3607,6 +3682,7 @@ function initTimeline(j, c) {
     resetCutsBtn.onclick = () => {
       segments = [{ id: nextSegId++, start: start, end: end, deleted: false }];
       renderSegments();
+      updateVisuals(pointerTime);
       toast("All cuts reset. Full range restored.", "ok");
     };
   }
@@ -3619,6 +3695,10 @@ function initTimeline(j, c) {
       const chip = e.target.closest(".tl-seg-chip");
       if (chip) {
         const seg = segments.find(s => s.id === Number(chip.dataset.segId));
+        if (seg) switchToReview(seg.start, true);
+      }
+    };
+  }
         if (seg) switchToReview(seg.start, true);
       }
     };
