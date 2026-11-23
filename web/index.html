@@ -1116,6 +1116,7 @@ const I = {
  "play": "<path d=\"M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z\"/>",
  "link": "<path d=\"M165.66,90.34a8,8,0,0,1,0,11.32l-64,64a8,8,0,0,1-11.32-11.32l64-64A8,8,0,0,1,165.66,90.34ZM215.6,40.4a56,56,0,0,0-79.2,0L106.34,70.45a8,8,0,0,0,11.32,11.32l30.06-30a40,40,0,0,1,56.57,56.56l-30.07,30.06a8,8,0,0,0,11.31,11.32L215.6,119.6a56,56,0,0,0,0-79.2ZM138.34,174.22l-30.06,30.06a40,40,0,1,1-56.56-56.57l30.05-30.05a8,8,0,0,0-11.32-11.32L40.4,136.4a56,56,0,0,0,79.2,79.2l30.06-30.07a8,8,0,0,0-11.32-11.31Z\"/>",
  "up": "<path d=\"M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0ZM93.66,77.66,120,51.31V144a8,8,0,0,0,16,0V51.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,77.66Z\"/>",
+ "repeat": "<path d=\"M24,128A104,104,0,0,1,207.92,54.63l10.74-10.74A8,8,0,0,1,232,49.52V96a8,8,0,0,1-8,8H177.52a8,8,0,0,1-5.66-13.66l12.72-12.71A88,88,0,1,0,216,128a8,8,0,0,1,16,0A104.11,104.11,0,0,1,24,128Z\"/>",
  "pause": "<path d=\"M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z\"/>",
  "scissors": "<path d=\"M157.73,113.13A8,8,0,0,1,159.82,102L227.48,55.7a8,8,0,0,1,9,13.21l-67.67,46.3a7.92,7.92,0,0,1-4.51,1.4A8,8,0,0,1,157.73,113.13Zm80.87,85.09a8,8,0,0,1-11.12,2.08L136,137.7,93.49,166.78a36,36,0,1,1-9-13.19L121.83,128,84.44,102.41a35.86,35.86,0,1,1,9-13.19l143,97.87A8,8,0,0,1,238.6,198.22ZM80,180a20,20,0,1,0-5.86,14.14A19.85,19.85,0,0,0,80,180ZM74.14,90.13a20,20,0,1,0-28.28,0A19.85,19.85,0,0,0,74.14,90.13Z\"/>",
  "sliders": "<path d=\"M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z\"/>",
@@ -2322,6 +2323,7 @@ function clipHtml(j, c) {
     : `<span class="making">${c.cancel ? "Cancelling…" : c.status === "rendering" ? "Making this clip…" : "Waiting its turn…"}</span>`;
   const key = `c:${j.id}:${c.id}`, busyClip = c.status === "queued" || c.status === "rendering";
   const postHtml = clipPostPills(j, c);
+  const hasPosted = Object.values(c.posts || {}).some(p => p.status === "posted" || p.status === "scheduled");
   return `<article class="clip ${sel().has(key) ? "picked" : ""}">
     <button class="shot" data-act="openclip" ${a} aria-label="Open clip: ${esc(c.title || c.hook)}">${body}
       <span class="badge l ${scoreCls(c.score)}" title="AI score">${c.score || "Hand"}</span><span class="badge r">${fmt(c.end - c.start)}</span></button>
@@ -2335,7 +2337,7 @@ function clipHtml(j, c) {
         <button class="btn sm icon ghost" data-act="copy" ${a} title="Copy post text" aria-label="Copy post text">${ic("copy")}</button>
         ${busyClip ? (c.cancel ? "" : `<button class="btn sm ghost" data-act="cancelclip" ${a} title="Stop making this clip" aria-label="Cancel this clip">${ic("x")}Cancel</button>`) : `<button class="btn sm icon ghost" data-act="delclip" ${a} title="Delete this clip" aria-label="Delete this clip">${ic("trash")}</button>`}
         <span class="grow"></span>
-        ${c.status === "done" ? `<button class="btn sm" data-act="openclip" ${a}>${ic("send")}Post</button>` : ""}
+        ${c.status === "done" ? `<button class="btn sm" data-act="openclip" ${a}>${hasPosted ? `${ic("repeat")}Repost` : `${ic("send")}Post`}</button>` : ""}
       </div>
     </div></article>`;
 }
@@ -3110,6 +3112,7 @@ function drawClipDlg(full) {
   const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid), dlg = $("#clipdlg");
   if (!c) { if (dlg.open) dlg.close(); return; }
   const m = `/media/${j.id}/`, sig = c.status + c.version + (c.cancel ? "x" : "");
+  const hasPosted = Object.values(c.posts || {}).some(p => p.status === "posted" || p.status === "scheduled");
   const stage = c.status === "done" ? `<div class="stage-wrap">
       <div class="stage-top-pill">
         <span class="badge ${scoreCls(c.score)}" id="stage_badge">Rendered (9:16)</span>
@@ -3269,10 +3272,10 @@ function drawClipDlg(full) {
         <label class="f">Description<textarea data-f="description" rows="2">${esc(c.description)}</textarea></label>
         <label class="f">Hashtags<input data-f="hashtags" value="${esc((c.hashtags || []).join(" "))}" placeholder="funny gaming clutch"></label>
         <button class="btn" data-act="remake">${ic("scissors")}Save and re-make clip</button>
-        <h3>Post it</h3>
+        <h3>${hasPosted ? "Repost it" : "Post it"}</h3>
         <div id="dposts" class="row" style="gap:4px"></div>
         ${S.accounts.length ? `${accountChecks("data-pacc", [])}
-          <div class="row"><button class="btn primary" data-act="postnow">${ic("send")}Post now</button><button class="btn" data-act="postqueue">Add to queue</button></div>
+          <div class="row"><button class="btn primary" data-act="postnow">${hasPosted ? `${ic("repeat")}Repost now` : `${ic("send")}Post now`}</button><button class="btn" data-act="postqueue">${hasPosted ? "Queue repost" : "Add to queue"}</button></div>
           <div id="dpost_preview" style="margin-top:6px"></div>`
           : `<p class="help">No accounts connected yet. Connect one in Settings.</p>`}
         <div class="row" style="margin-top:auto;padding-top:8px;border-top:1px solid var(--line)">
@@ -4271,15 +4274,29 @@ $("#clipdlg").addEventListener("change", e => {
   if (e.target.matches("[data-pacc]")) {
     const checked = $$("#clipdlg [data-pacc]:checked").map(i => i.value);
     const dpv = $("#dpost_preview");
-    if (!dpv) return;
     const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid);
-    if (!c || postPills(c)) return;
+    if (!c) return;
+    const postedAccIds = Object.values(c.posts || {})
+      .filter(p => p.status === "posted" || p.status === "scheduled")
+      .map(p => p.account);
+    const hasPosted = postedAccIds.length > 0;
+    const isRepost = checked.length ? checked.some(id => postedAccIds.includes(id)) : hasPosted;
+    const btnNow = $("#clipdlg [data-act='postnow']");
+    const btnQueue = $("#clipdlg [data-act='postqueue']");
+    if (btnNow) btnNow.innerHTML = `${isRepost ? ic("repeat") + "Repost now" : ic("send") + "Post now"}`;
+    if (btnQueue) btnQueue.textContent = isRepost ? "Queue repost" : "Add to queue";
+
+    if (!dpv) return;
     if (!checked.length) {
-      const proj = (S.projectedSlots && S.projectedSlots[`${j.id}:${c.id}`]) || (S.projected && S.projected[`${j.id}:${c.id}`]);
-      if (proj) {
-        dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--dim)">If you schedule now, this clip will upload at <b>${clock(proj.time)}</b> on <b>${esc(proj.account_name)}</b> (as per channel schedule & post gap).</p>`;
-        const dp = $("#dposts");
-        if (dp) dp.innerHTML = `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${proj.account_name ? `${esc(proj.account_name)} · ` : ""}Next slot: ${clock(proj.time)}</span>`;
+      if (hasPosted) {
+        dpv.innerHTML = "";
+      } else {
+        const proj = (S.projectedSlots && S.projectedSlots[`${j.id}:${c.id}`]) || (S.projected && S.projected[`${j.id}:${c.id}`]);
+        if (proj) {
+          dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--dim)">If you schedule now, this clip will upload at <b>${clock(proj.time)}</b> on <b>${esc(proj.account_name)}</b> (as per channel schedule & post gap).</p>`;
+          const dp = $("#dposts");
+          if (dp) dp.innerHTML = `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${proj.account_name ? `${esc(proj.account_name)} · ` : ""}Next slot: ${clock(proj.time)}</span>`;
+        }
       }
       return;
     }
@@ -4287,10 +4304,13 @@ $("#clipdlg").addEventListener("change", e => {
     if (acc) {
       const cr = (S.creators || []).find(x => x.id === j.creator);
       const slot = getAccountNextSlot(acc, cr);
-      if (slot) {
+      const isAlreadyOnThis = postedAccIds.includes(acc.id);
+      if (isAlreadyOnThis) {
+        dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--brand-ink)">Already posted to <b>${esc(acc.name)}</b>. Repost will schedule at <b>${clock(slot)}</b>.</p>`;
+      } else if (slot) {
         dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--brand-ink)">If scheduled on <b>${esc(acc.name)}</b>, this video will upload at <b>${clock(slot)}</b>.</p>`;
         const dp = $("#dposts");
-        if (dp) dp.innerHTML = `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${esc(acc.name)} · Next: ${clock(slot)}</span>`;
+        if (dp && !hasPosted) dp.innerHTML = `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${esc(acc.name)} · Next: ${clock(slot)}</span>`;
       }
     }
   }
@@ -4639,8 +4659,19 @@ document.addEventListener("click", async e => {
     if (a === "pdismiss") { await api(`/api/posts/${d.id}/dismiss`, {method:"POST"}); return loadOverview(); }
     if (a === "qvideo") {
       const j = jobOf(d.j), pick = await pickAccounts("Queue all clips", "Choose where these clips go. Each takes the next free upload time.", (S.creators.find(c => c.id === j?.creator)?.accounts || []).filter(id => S.accounts.some(a => a.id === id)));
-      if (!pick) return;
-      const r = await send("/api/posts/queue-video", {job:d.j, accounts:pick}); toast(`${r.queued} clip${r.queued > 1 ? "s" : ""} added to the queue`, "ok"); return tick();
+      if (!pick || !pick.length) return;
+      const doneClips = (j?.clips || []).filter(c => c.status === "done");
+      const alreadyPosted = doneClips.some(c =>
+        Object.values(c.posts || {}).some(p => pick.includes(p.account) && (p.status === "posted" || p.status === "scheduled"))
+      );
+      let repost = false;
+      if (alreadyPosted) {
+        if (!await ask("Repost video clips?", "Some or all clips in this video were already posted or scheduled to these channels. Are you sure you want to repost them?", "Repost")) return;
+        repost = true;
+      }
+      const r = await send("/api/posts/queue-video", {job:d.j, accounts:pick, repost});
+      toast(`${r.queued} clip${r.queued > 1 ? "s" : ""} ${repost ? "reposted to" : "added to"} the queue`, "ok");
+      return tick();
     }
     if (a === "pcancel" || a === "pretry") { await api(`/api/posts/${d.id}/${a === "pcancel" ? "cancel" : "retry"}`, {method:"POST"}); return refreshPosting(); }
     if (a === "ssave") { await saveSettings(); toast("Saved", "ok"); return drawSettings(); }
@@ -4671,10 +4702,25 @@ document.addEventListener("click", async e => {
     if (a === "postnow" || a === "postqueue") {
       const accs = $$("#clipdlg [data-pacc]:checked").map(i => i.value);
       if (!accs.length) return toast("Tick at least one account first.", "bad");
-      if (a === "postnow" && !await ask("Post now?", `This clip goes to ${accs.length} account${accs.length > 1 ? "s" : ""} straight away.`, "Post now")) return;
+      const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid);
+      const postedAccIds = Object.values(c?.posts || {})
+        .filter(p => p.status === "posted" || p.status === "scheduled")
+        .map(p => p.account);
+      const overlapping = accs.filter(id => postedAccIds.includes(id));
+      let repost = false;
+      if (overlapping.length > 0) {
+        const names = overlapping.map(id => S.accounts.find(x => x.id === id)?.name || "channel").join(", ");
+        const question = a === "postnow" ? "Repost video now?" : "Queue repost?";
+        const detail = `This video was already posted to ${names}. Are you sure you want to repost it?`;
+        const actionLabel = a === "postnow" ? "Repost now" : "Queue repost";
+        if (!await ask(question, detail, actionLabel)) return;
+        repost = true;
+      } else if (a === "postnow") {
+        if (!await ask("Post now?", `This clip goes to ${accs.length} account${accs.length > 1 ? "s" : ""} straight away.`, "Post now")) return;
+      }
       await send(`/api/jobs/${D.jid}/clips/${D.cid}/text`, postText(), "PUT");   // the text as it is in the boxes now
-      await send("/api/posts", {job:D.jid, clip:D.cid, accounts:accs, now:a === "postnow"});
-      toast(a === "postnow" ? "Posting now" : "Added to the queue", "ok"); return tick();
+      await send("/api/posts", {job:D.jid, clip:D.cid, accounts:accs, now:a === "postnow", repost});
+      toast(repost ? (a === "postnow" ? "Reposting now" : "Repost added to queue") : (a === "postnow" ? "Posting now" : "Added to the queue"), "ok"); return tick();
     }
   } catch (err) { b.disabled = false; toast(err.message, "bad"); }
 });

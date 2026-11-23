@@ -1877,9 +1877,10 @@ def add_posts(body: dict = Body(...)):
     clip = next((c for c in job["clips"] if c["id"] == body.get("clip")), None) if job else None
     if not clip or clip.get("status") != "done":
         raise HTTPException(404, "That clip is not ready")
-    made = posting.enqueue(job, clip, [str(a) for a in body.get("accounts", [])][:20], now=bool(body.get("now")))
+    repost = bool(body.get("repost"))
+    made = posting.enqueue(job, clip, [str(a) for a in body.get("accounts", [])][:20], now=bool(body.get("now")), repost=repost)
     if not made:
-        raise HTTPException(400, "Nothing was queued. Pick at least one account this clip has not already gone to.")
+        raise HTTPException(400, "Nothing was queued. Pick at least one account this clip has not already gone to, or confirm repost.")
     return {"queued": len(made)}
 
 
@@ -1888,7 +1889,8 @@ def queue_video(body: dict = Body(...)):
     job = jobs.get(str(body.get("job")))
     if not job:
         raise HTTPException(404, "No such video")
-    n = posting.queue_video(job, [str(a) for a in body.get("accounts", [])][:20])
+    repost = bool(body.get("repost"))
+    n = posting.queue_video(job, [str(a) for a in body.get("accounts", [])][:20], repost=repost)
     if not n:
         raise HTTPException(400, "Nothing was queued. Pick an account, and make sure the clips are finished and not already queued for it.")
     return {"queued": n}

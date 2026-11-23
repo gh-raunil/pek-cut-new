@@ -123,14 +123,14 @@ def _place(p, exclude=()):
         p["due_at"] = slot
 
 
-def _add(job, clip, aid, now=False):
+def _add(job, clip, aid, now=False, repost=False):
     """One new post in the queue (inside _lock), or None when this clip already went, or is going, to that account."""
     acc = accounts.get(aid)
     if not acc:
         return None
-    if any(p["job"] == job["id"] and p["clip"] == clip["id"] and p["account"] == aid
+    if not repost and any(p["job"] == job["id"] and p["clip"] == clip["id"] and p["account"] == aid
            and p["status"] in OPEN + ("posted",) for p in _mine()):
-        return None  # never post the same clip to the same account twice
+        return None  # never post the same clip to the same account twice unless repost is confirmed
     p = {"id": secrets.token_hex(8), "user": ctx.uid(), "job": job["id"], "clip": clip["id"], "creator": job["creator"],
          "account": aid, "account_name": acc["name"], "platform": acc["platform"], "status": "scheduled",
          "due_at": time.time(), "created": time.time(), "title": clip.get("title") or clip.get("hook") or "Clip",
@@ -141,9 +141,9 @@ def _add(job, clip, aid, now=False):
     return p
 
 
-def enqueue(job, clip, account_ids, now=False) -> list:
+def enqueue(job, clip, account_ids, now=False, repost=False) -> list:
     with _lock:
-        made = [p for p in (_add(job, clip, aid, now) for aid in account_ids) if p]
+        made = [p for p in (_add(job, clip, aid, now, repost=repost) for aid in account_ids) if p]
         _save()
     for p in made:
         _mirror(p)
@@ -317,10 +317,10 @@ def dismiss(pid):
         jobs.save(job)
 
 
-def queue_video(job, account_ids) -> int:
+def queue_video(job, account_ids, repost=False) -> int:
     """Put every finished clip of a video in the queue, each in the next free upload slot, best clip first."""
     clips = sorted((c for c in job["clips"] if c.get("status") == "done"), key=lambda c: -c.get("score", 0))
-    return sum(len(enqueue(job, c, account_ids)) for c in clips)
+    return sum(len(enqueue(job, c, account_ids, repost=repost)) for c in clips)
 
 
 def plan(account_ids, creator_id=None, min_score=0, dry=False) -> dict:
