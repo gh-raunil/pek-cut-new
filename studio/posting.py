@@ -363,6 +363,112 @@ def plan(account_ids, creator_id=None, min_score=0, dry=False) -> dict:
     return {"queued": len(made), "channels": out, "dry": dry}
 
 
+def projected_schedule(creator_id=None) -> dict:
+    """Projected upload times for all unscheduled ready clips, calculated sequentially
+    according to channel upload times or creator post gap and daily cap."""
+    cs = {c["id"]: c for c in creators.all_creators()}
+    accs = accounts.list_accounts()
+    if not accs:
+        return {}
+    known_accounts = {a["id"]: a for a in accs}
+
+    with _lock:
+        mine = [p for p in _mine() if p["status"] in OPEN + ("posted",)]
+        taken_by_acc = {}
+        per_day_by_acc = {}
+        for a in accs:
+            aid = a["id"]
+            taken_by_acc[aid] = {int(_when(p) // 60) for p in mine if p.get("account") == aid}
+            per_day = {}
+            for p in mine:
+                if p.get("account") == aid:
+                    dk = _day(_when(p))
+                    per_day[dk] = per_day.get(dk, 0) + 1
+            per_day_by_acc[aid] = per_day
+
+        all_js = jobs.list_jobs()
+        if creator_id:
+            all_js = [j for j in all_js if j.get("creator") == creator_id]
+
+        out = {}
+
+        def target_account_for(j):
+            for c in j.get("clips", []):
+                for p in (c.get("posts") or {}).values():
+                    if p.get("status") not in ("cancelled", "failed") and p.get("account") in known_accounts:
+                        return known_accounts[p["account"]]
+                    if p.get("status") not in ("cancelled", "failed"):
+                        for a in accs:
+                            if a["name"] == p.get("account_name"):
+                                return a
+            if j.get("creator"):
+                cr = cs.get(j["creator"])
+                if cr:
+                    for aid in cr.get("accounts", []):
+                        if aid in known_accounts:
+                            return known_accounts[aid]
+                    for a in accs:
+                        if a["name"].lower() == cr.get("name", "").lower():
+                            return a
+            return accs[0]
+
+        for j in all_js:
+            acc = target_account_for(j)
+            if not acc:
+                continue
+            aid = acc["id"]
+            cr = cs.get(j.get("creator")) or creators.DEFAULTS
+            times, own = accounts.schedule_for(aid)
+            ahead = bool(times) and accounts.uploads_ahead(aid) and cr.get("privacy", "public") == "public"
+            gap_min = cr.get("post_gap_min", 45)
+            cap = len(times) if (times and own) else (cr.get("daily_cap", 8))
+
+            for c in j.get("clips", []):
+                if c.get("status") != "done":
+                    continue
+                has_active_post = any(
+                    p.get("status") not in ("cancelled", "failed")
+                    for p in (c.get("posts") or {}).values()
+                )
+                if has_active_post:
+                    continue
+
+                now = time.time()
+                min_start = now + 600 if ahead else now
+                taken = taken_by_acc[aid]
+                per_day = per_day_by_acc[aid]
+                slot = None
+                if times:
+                    for t in _slots(times, min_start):
+                        dk = _day(t)
+                        if int(t // 60) not in taken and per_day.get(dk, 0) < cap:
+                            slot = t
+                            break
+                if slot is None:
+                    max_taken = max((m * 60 for m in taken), default=now)
+                    t = max(now, max_taken + gap_min * 60)
+                    for _ in range(30):
+                        dk = _day(t)
+                        if per_day.get(dk, 0) < cap:
+                            slot = t
+                            break
+                        lt = time.localtime(t + 86400)
+                        t = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 9, 0, 0, 0, 0, -1))
+                    if slot is None:
+                        slot = t
+
+                taken.add(int(slot // 60))
+                dk = _day(slot)
+                per_day[dk] = per_day.get(dk, 0) + 1
+                out[f"{j['id']}:{c['id']}"] = {
+                    "time": slot,
+                    "account_id": aid,
+                    "account_name": acc["name"],
+                }
+
+        return out
+
+
 def reschedule(account_id=None) -> int:
     """After the upload times change: lay the waiting posts out again, in their current order, on the new times.
     Posts you sent with Post now or Retry, and ones already tried, are left alone. With `account_id`, only that

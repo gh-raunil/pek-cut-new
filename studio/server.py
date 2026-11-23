@@ -1866,6 +1866,11 @@ def yt_cookies_put(request: Request, body: dict = Body(...)):
     return yt_cookies_get(request)
 
 
+@app.get("/api/posts/projected")
+def get_projected_posts():
+    return posting.projected_schedule()
+
+
 @app.post("/api/posts")
 def add_posts(body: dict = Body(...)):
     job = jobs.get(str(body.get("job")))

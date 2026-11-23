@@ -254,6 +254,9 @@ label.ck input{accent-color:var(--brand);margin:0}
 .pill.warn{color:var(--brand-deep);background:var(--brand-soft)}
 .pill.live{color:#fff;background:var(--live)}
 .pill.brand{color:var(--brand-ink);background:var(--brand)}
+.pill.projected{color:var(--brand-deep);background:rgba(234,88,12,0.06);border:1px dashed var(--brand-line);cursor:pointer;transition:border-color .15s ease,color .15s ease,background-color .15s ease}
+.pill.projected svg{width:13px;height:13px;margin-right:1px}
+.pill.projected:hover{border-color:var(--brand);color:var(--brand-ink);background:var(--brand-soft)}
 .dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.3s infinite}
 @keyframes pulse{50%{opacity:.3}}
 .empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:48px 20px;text-align:center;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:4px}
@@ -2169,19 +2172,163 @@ function postPills(c) {
     return p.url ? `<a class="pill ${cls}" href="${esc(p.url)}" target="_blank" rel="noopener">${txt}</a>` : `<span class="pill ${cls}" title="${esc(p.error || "")}">${txt}</span>`;
   }).join("");
 }
+
+function localDateKey(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function getAccountNextSlot(acc, cr, takenSet, perDayMap, startFrom) {
+  const times = (acc.schedule && acc.schedule.times) || [];
+  const ahead = !!(acc.schedule && acc.schedule.ahead);
+  const nowSec = startFrom || (Date.now() / 1000);
+  const minStart = ahead ? (nowSec + 600) : nowSec;
+
+  const taken = takenSet || new Set();
+  const perDay = perDayMap || {};
+
+  if (times.length > 0) {
+    const cap = times.length;
+    const d = new Date(minStart * 1000);
+    const startY = d.getFullYear(), startM = d.getMonth(), startD = d.getDate();
+    for (let dayOffset = 0; dayOffset <= 60; dayOffset++) {
+      for (const hhmm of times) {
+        const h = parseInt(hhmm.slice(0, 2), 10);
+        const m = parseInt(hhmm.slice(3, 5), 10);
+        const slotD = new Date(startY, startM, startD + dayOffset, h, m, 0, 0);
+        const t = Math.floor(slotD.getTime() / 1000);
+        if (t > minStart) {
+          const dk = localDateKey(slotD);
+          const minKey = Math.floor(t / 60);
+          if (!taken.has(minKey) && (perDay[dk] || 0) < cap) {
+            return t;
+          }
+        }
+      }
+    }
+  }
+
+  const gapMin = (cr && cr.post_gap_min) || 45;
+  const cap = (cr && cr.daily_cap) || 8;
+  let maxTaken = nowSec;
+  for (const m of taken) {
+    if (m * 60 > maxTaken) maxTaken = m * 60;
+  }
+  let t = Math.max(nowSec, maxTaken + gapMin * 60);
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(t * 1000);
+    const dk = localDateKey(d);
+    if ((perDay[dk] || 0) < cap) {
+      return t;
+    }
+    const nextDay = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 9, 0, 0, 0);
+    t = Math.floor(nextDay.getTime() / 1000);
+  }
+  return t;
+}
+
+function getProjectedSlots() {
+  const map = {};
+  if (!S.accounts || !S.accounts.length || !S.jobs) return map;
+
+  const accTaken = {};
+  const accPerDay = {};
+
+  for (const a of S.accounts) {
+    accTaken[a.id] = new Set();
+    accPerDay[a.id] = {};
+  }
+
+  for (const j of S.jobs) {
+    for (const c of (j.clips || [])) {
+      for (const p of Object.values(c.posts || {})) {
+        if (p.status !== "cancelled" && p.status !== "failed") {
+          const t = p.publish_at || p.due_at;
+          if (t) {
+            const acc = S.accounts.find(a => a.id === p.account || a.name === p.account_name) || S.accounts[0];
+            if (acc && accTaken[acc.id]) {
+              accTaken[acc.id].add(Math.floor(t / 60));
+              const dk = localDateKey(new Date(t * 1000));
+              accPerDay[acc.id][dk] = (accPerDay[acc.id][dk] || 0) + 1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function targetAccountForJob(j) {
+    for (const c of (j.clips || [])) {
+      for (const p of Object.values(c.posts || {})) {
+        if (p.status !== "cancelled" && p.status !== "failed") {
+          const acc = S.accounts.find(a => a.id === p.account || a.name === p.account_name);
+          if (acc) return acc;
+        }
+      }
+    }
+    if (j.creator) {
+      const cr = (S.creators || []).find(x => x.id === j.creator);
+      if (cr) {
+        if (cr.accounts && cr.accounts.length) {
+          const acc = S.accounts.find(a => cr.accounts.includes(a.id));
+          if (acc) return acc;
+        }
+        const byName = S.accounts.find(a => a.name.toLowerCase() === cr.name.toLowerCase());
+        if (byName) return byName;
+      }
+    }
+    return S.accounts[0];
+  }
+
+  for (const j of S.jobs) {
+    const acc = targetAccountForJob(j);
+    if (!acc) continue;
+    const cr = (S.creators || []).find(x => x.id === j.creator);
+    for (const c of (j.clips || [])) {
+      if (c.status !== "done") continue;
+      const hasPost = Object.values(c.posts || {}).some(p => p.status !== "cancelled" && p.status !== "failed");
+      if (hasPost) continue;
+
+      const slot = getAccountNextSlot(acc, cr, accTaken[acc.id], accPerDay[acc.id]);
+      if (slot) {
+        accTaken[acc.id].add(Math.floor(slot / 60));
+        const dk = localDateKey(new Date(slot * 1000));
+        accPerDay[acc.id][dk] = (accPerDay[acc.id][dk] || 0) + 1;
+        map[`${j.id}:${c.id}`] = {
+          time: slot,
+          account_id: acc.id,
+          account_name: acc.name
+        };
+      }
+    }
+  }
+
+  return map;
+}
+
+function clipPostPills(j, c) {
+  const existing = postPills(c);
+  if (existing) return existing;
+  if (c.status !== "done" || !S.accounts || !S.accounts.length) return "";
+  const proj = (S.projectedSlots && S.projectedSlots[`${j.id}:${c.id}`]) || (S.projected && S.projected[`${j.id}:${c.id}`]);
+  if (!proj) return "";
+  const title = `If you schedule now, this video will upload at ${clock(proj.time)} (as per channel schedule & post gap)`;
+  return `<span class="pill projected" data-act="openclip" data-j="${j.id}" data-c="${esc(c.id)}" title="${esc(title)}">${ic("clock")}${proj.account_name ? `${esc(proj.account_name)} · ` : ""}${clock(proj.time)}</span>`;
+}
+
 function clipHtml(j, c) {
   const m = `/media/${j.id}/`, a = `data-j="${j.id}" data-c="${esc(c.id)}"`;
   const body = c.status === "done" ? `<img src="${m}${esc(c.cover)}?v=${c.version}" alt="" loading="lazy"><span class="veil"><span>${ic("play")}</span></span>`
     : c.status === "error" ? `<span class="making" style="animation:none;color:var(--bad);background:var(--bad-soft)">Could not make this clip. Open it to try again.</span>`
     : `<span class="making">${c.cancel ? "Cancelling…" : c.status === "rendering" ? "Making this clip…" : "Waiting its turn…"}</span>`;
   const key = `c:${j.id}:${c.id}`, busyClip = c.status === "queued" || c.status === "rendering";
+  const postHtml = clipPostPills(j, c);
   return `<article class="clip ${sel().has(key) ? "picked" : ""}">
     <button class="shot" data-act="openclip" ${a} aria-label="Open clip: ${esc(c.title || c.hook)}">${body}
       <span class="badge l ${scoreCls(c.score)}" title="AI score">${c.score || "Hand"}</span><span class="badge r">${fmt(c.end - c.start)}</span></button>
     <div class="clip-body">
       <div class="hook">${esc(c.hook || "Untitled clip")}</div>
       <div class="ttl">${esc(c.title)}</div>
-      ${postPills(c) ? `<div class="row" style="gap:4px">${postPills(c)}</div>` : ""}
+      ${postHtml ? `<div class="row" style="gap:4px">${postHtml}</div>` : ""}
       <div class="clip-foot">
         ${busyClip ? "" : `<label class="selck" title="Select this clip"><input type="checkbox" data-sel="${key}" ${sel().has(key) ? "checked" : ""} aria-label="Select this clip"></label>`}
         ${c.status === "done" ? `<a class="btn sm icon ghost" href="${m}${esc(c.file)}?download=1" title="Download" aria-label="Download">${ic("down")}</a>` : ""}
@@ -3125,7 +3272,8 @@ function drawClipDlg(full) {
         <h3>Post it</h3>
         <div id="dposts" class="row" style="gap:4px"></div>
         ${S.accounts.length ? `${accountChecks("data-pacc", [])}
-          <div class="row"><button class="btn primary" data-act="postnow">${ic("send")}Post now</button><button class="btn" data-act="postqueue">Add to queue</button></div>`
+          <div class="row"><button class="btn primary" data-act="postnow">${ic("send")}Post now</button><button class="btn" data-act="postqueue">Add to queue</button></div>
+          <div id="dpost_preview" style="margin-top:6px"></div>`
           : `<p class="help">No accounts connected yet. Connect one in Settings.</p>`}
         <div class="row" style="margin-top:auto;padding-top:8px;border-top:1px solid var(--line)">
           ${c.status === "done" ? `<a class="btn" href="${m}${esc(c.file)}?download=1">${ic("down")}Download</a>` : ""}
@@ -3134,7 +3282,21 @@ function drawClipDlg(full) {
     initTimeline(j, c);
   } else if (D.sig !== sig) $("#stage").innerHTML = stage;
   D.sig = sig;
-  put($("#dposts"), postPills(c));
+  const activeP = postPills(c);
+  const projP = (S.projectedSlots && S.projectedSlots[`${j.id}:${c.id}`]) || (S.projected && S.projected[`${j.id}:${c.id}`]);
+  if (activeP) {
+    put($("#dposts"), activeP);
+    const dpv = $("#dpost_preview");
+    if (dpv) dpv.innerHTML = "";
+  } else if (projP) {
+    put($("#dposts"), `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${projP.account_name ? `${esc(projP.account_name)} · ` : ""}Next slot: ${clock(projP.time)}</span>`);
+    const dpv = $("#dpost_preview");
+    if (dpv) dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--dim)">If you schedule now, this video will upload at <b>${clock(projP.time)}</b> on <b>${esc(projP.account_name)}</b> (as per channel schedule & post gap).</p>`;
+  } else {
+    put($("#dposts"), "");
+    const dpv = $("#dpost_preview");
+    if (dpv) dpv.innerHTML = "";
+  }
 }
 
 function initTimeline(j, c) {
@@ -4105,9 +4267,38 @@ $("#clipdlg").addEventListener("close", () => {
   D.jid = null;
 });
 $("#clipdlg").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+$("#clipdlg").addEventListener("change", e => {
+  if (e.target.matches("[data-pacc]")) {
+    const checked = $$("#clipdlg [data-pacc]:checked").map(i => i.value);
+    const dpv = $("#dpost_preview");
+    if (!dpv) return;
+    const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid);
+    if (!c || postPills(c)) return;
+    if (!checked.length) {
+      const proj = (S.projectedSlots && S.projectedSlots[`${j.id}:${c.id}`]) || (S.projected && S.projected[`${j.id}:${c.id}`]);
+      if (proj) {
+        dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--dim)">If you schedule now, this clip will upload at <b>${clock(proj.time)}</b> on <b>${esc(proj.account_name)}</b> (as per channel schedule & post gap).</p>`;
+        const dp = $("#dposts");
+        if (dp) dp.innerHTML = `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${proj.account_name ? `${esc(proj.account_name)} · ` : ""}Next slot: ${clock(proj.time)}</span>`;
+      }
+      return;
+    }
+    const acc = S.accounts.find(a => a.id === checked[0]);
+    if (acc) {
+      const cr = (S.creators || []).find(x => x.id === j.creator);
+      const slot = getAccountNextSlot(acc, cr);
+      if (slot) {
+        dpv.innerHTML = `<p class="help" style="font-size:12px;color:var(--brand-ink)">If scheduled on <b>${esc(acc.name)}</b>, this video will upload at <b>${clock(slot)}</b>.</p>`;
+        const dp = $("#dposts");
+        if (dp) dp.innerHTML = `<span class="pill projected" title="If scheduled, will upload at this time">${ic("clock")}${esc(acc.name)} · Next: ${clock(slot)}</span>`;
+      }
+    }
+  }
+});
 
 /* ============================================================ render + polling */
 function render() {
+  S.projectedSlots = getProjectedSlots();
   drawShell(); drawJobs(); drawStream(); drawSelBar();
   if (S.view === "overview") drawOverview();
   if (S.view === "channels") drawChannels();
@@ -4128,6 +4319,7 @@ async function tick() {
     // a server from before multi-channel support sends only `channel`: show it as that platform's channel
     creators.forEach(c => { if (!c.channels) { const u = c.channel || "", k = /youtu/i.test(u) ? "youtube" : /twitch/i.test(u) ? "twitch" : /kick/i.test(u) ? "kick" : ""; c.channels = k ? {[k]: u} : {}; } });
     S.jobs = jobs; S.creators = creators; S.accounts = accounts;
+    if (got.projected) S.projected = got.projected;
     if (got.groups) S.groups = got.groups;
     if (got.ai) S.status.ai = got.ai;
     if (got.unread != null) S.status.unread = got.unread;
