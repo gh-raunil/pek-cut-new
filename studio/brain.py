@@ -152,10 +152,27 @@ def _tidy(c, s, e, game=None):
     }
 
 
+def _norm_sound(s):
+    s = s.lower()
+    s = re.sub(r"[^a-z0-9]", "", s)
+    s = s.replace("ph", "f").replace("kh", "k").replace("th", "t").replace("dh", "d").replace("bh", "b").replace("gh", "g").replace("jh", "j").replace("sh", "s").replace("ch", "c")
+    s = s.replace("w", "v").replace("c", "k").replace("q", "k").replace("z", "j").replace("x", "ks")
+    s = s.replace("ee", "i").replace("oo", "u").replace("aa", "a").replace("ai", "e").replace("ay", "e").replace("au", "o")
+    s = s.replace("y", "i")
+    return re.sub(r"(.)\1+", r"\1", s)
+
+
 def _same_word(old, new):
     """A caption fix may respell a word or turn it into digits. It may not swap in different words."""
     a, b = re.sub(r"[^a-z0-9]", "", old.lower()), re.sub(r"[^a-z0-9]", "", new.lower())
-    return (not b) or (any(ch.isdigit() for ch in b) and len(new) <= 12) or difflib.SequenceMatcher(None, a, b).ratio() >= 0.45
+    if not b:
+        return True
+    if any(ch.isdigit() for ch in b) and len(new) <= 12:
+        return True
+    if difflib.SequenceMatcher(None, a, b).ratio() >= 0.45:
+        return True
+    na, nb = _norm_sound(a), _norm_sound(b)
+    return bool(na and nb and difflib.SequenceMatcher(None, na, nb).ratio() >= 0.45)
 
 
 def _overlaps(s, e, others):
@@ -678,10 +695,21 @@ def _fix_caption_words(words: list, title: str = "", lang: str = "") -> list:
     # The Hindi and Urdu rule is only given for those videos. On an English video it is one more thing a small
     # model can get wrong (turning English into something else).
     hindi = (lang or "").lower().startswith(("hi", "ur")) or any(roman.needs_roman(w["w"]) for w in words)
-    hinglish = ("If a word is Hindi or Urdu (in Devanagari or Urdu script, or already "
-                "in Roman letters), write that same word in Roman letters the way people type Hindi in chats (Hinglish): "
-                "'चूना' -> 'choona', 'जो' -> 'jo', 'उसको' -> 'usko', 'یار' -> 'yaar', 'کیا' -> 'kya'. Never translate it into "
-                "English and never leave Devanagari or Urdu script. ") if hindi else ""
+    hinglish = (
+        "If a word is Hindi or Urdu (in Devanagari or Urdu script, or already in Roman letters), "
+        "write that same word in Roman letters the way people type Hindi in chats (Hinglish): "
+        "'चूना' -> 'choona', 'जो' -> 'jo', 'उसको' -> 'usko', 'यूट्यूब' -> 'YouTube', 'یار' -> 'yaar', 'کیا' -> 'kya'. "
+        "For English loan words used in conversational Hindi/Hinglish (such as screen, button, damage, exit, double tap, "
+        "drift, fly, ground, enemy, bullet, dodge, comment, video, instant, fight, gun, save, kill, click, house, "
+        "apartment, stuck, entrance, bag, random, trick, fire, heal, vehicle, update, popup, notification, voice chat, "
+        "feature, health, literally, add, item, multiple, completely, full, play, animation, lobby, classic, cabin, "
+        "select, problem, next, take care, bye-bye, like, subscribe, follow, share), ALWAYS write them with their standard "
+        "English spelling (e.g. 'damage' NOT 'daimej', 'screen' NOT 'skreen', 'button' NOT 'batan', 'exit' NOT 'egjit', "
+        "'fly' NOT 'phlai', 'fight' NOT 'phait', 'left' NOT 'lepht'). For Hindi words, use natural chat Hinglish spelling "
+        "(e.g. 'chahiye', 'padega', 'thoda', 'gaadi', 'pehle', 'zaroor', 'nahi', 'kya', 'hai', 'bada'). "
+        "Never translate Hindi words into English (e.g. 'चूना' is 'choona', NOT 'lime'; 'घर' is 'ghar', NOT 'house') "
+        "and never leave Devanagari or Urdu script. "
+    ) if hindi else ""
     numbered = "\n".join(f"{i}: {_safe(w['w'], 60)}" for i, w in enumerate(words))
     prompt = (
         "These are the words of a short video clip's captions, one per line with its number, written by a speech "

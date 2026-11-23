@@ -5,6 +5,7 @@ clip's captions (brain.fix_caption_words); this is the fallback for when there i
 that a caption is never drawn in Hindi or Urdu script. Urdu is written without most vowels, so common words come
 from a list and the rest are spelled from their letters: readable, if not always how a person would type it."""
 import re
+import unicodedata
 
 _VOWELS = {"अ": "a", "आ": "aa", "इ": "i", "ई": "ee", "उ": "u", "ऊ": "oo", "ऋ": "ri", "ए": "e", "ऐ": "ai",
            "ओ": "o", "औ": "au", "ऑ": "o", "ऍ": "e"}
@@ -14,18 +15,126 @@ _CONS = {"क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "n", "च": "c
          "ञ": "n", "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n", "त": "t", "थ": "th", "द": "d", "ध": "dh",
          "न": "n", "प": "p", "फ": "ph", "ब": "b", "भ": "bh", "म": "m", "य": "y", "र": "r", "ल": "l", "व": "v",
          "श": "sh", "ष": "sh", "स": "s", "ह": "h", "ळ": "l",
-         "क़": "q", "ख़": "kh", "ग़": "gh", "ज़": "z", "फ़": "f", "ड़": "r", "ढ़": "rh", "य़": "y"}
-_NUKTA = {"क": "q", "ख": "kh", "ग": "gh", "ज": "z", "फ": "f", "ड": "r", "ढ": "rh", "य": "y"}
+         # Decomposed nukta letters (base letter + nukta sign \u093C):
+         "क़": "q", "ख़": "kh", "ग़": "gh", "ज़": "z", "फ़": "f", "ड़": "d", "ढ़": "dh", "य़": "y",
+         # Precomposed nukta letters (\u0958-\u095F in NFC Devanagari):
+         "क़": "q", "ख़": "kh", "ग़": "gh", "ज़": "z", "ड़": "d", "ढ़": "dh", "फ़": "f", "य़": "y"}
+_NUKTA = {"क": "q", "ख": "kh", "ग": "gh", "ज": "z", "फ": "f", "ड": "d", "ढ": "dh", "य": "y"}
 _VIRAMA, _NUKTA_SIGN = "्", "़"
 _NASAL = {"ं": "n", "ँ": "n"}
 _OTHER = {"ः": "h", "।": ".", "॥": ".", "ॐ": "om", **{chr(0x0966 + i): str(i) for i in range(10)}}
-# Common words whose everyday spelling the rules below would not guess.
-_WORDS = {"में": "mein", "मैं": "main", "हैं": "hain", "है": "hai", "नहीं": "nahi", "नही": "nahi", "हूँ": "hoon",
-          "हूं": "hoon", "क्या": "kya", "क्यों": "kyun", "क्यूँ": "kyun", "यह": "yeh", "वह": "woh", "और": "aur",
-          "भी": "bhi", "ही": "hi", "की": "ki", "जी": "ji", "तो": "to", "हाँ": "haan", "हां": "haan", "यहाँ": "yahan",
-          "यहां": "yahan", "वहाँ": "wahan", "वहां": "wahan", "कहाँ": "kahan", "कहां": "kahan", "थी": "thi",
-          "रही": "rahi", "कभी": "kabhi", "अभी": "abhi", "सभी": "sabhi", "भाई": "bhai", "मुझे": "mujhe",
-          "तुम": "tum", "हम": "hum", "आप": "aap", "बहुत": "bahut", "अच्छा": "accha", "ठीक": "theek", "लिए": "liye"}
+
+# Common words whose everyday chat spelling or English loanword form the rules below would not guess.
+_RAW_WORDS = {
+    # Pronouns, conjunctions, core particles
+    "में": "mein", "मैं": "main", "हैं": "hain", "है": "hai", "नहीं": "nahi", "नही": "nahi", "हूँ": "hoon",
+    "हूं": "hoon", "क्या": "kya", "क्यों": "kyun", "क्यूँ": "kyun", "यह": "yeh", "वह": "woh", "और": "aur",
+    "भी": "bhi", "ही": "hi", "की": "ki", "जी": "ji", "तो": "to", "हाँ": "haan", "हां": "haan", "यहाँ": "yahan",
+    "यहां": "yahan", "वहाँ": "wahan", "वहां": "wahan", "कहाँ": "kahan", "कहां": "kahan", "थी": "thi",
+    "रही": "rahi", "कभी": "kabhi", "अभी": "abhi", "सभी": "sabhi", "भाई": "bhai", "मुझे": "mujhe",
+    "तुम": "tum", "हम": "hum", "आप": "aap", "बहुत": "bahut", "अच्छा": "accha", "ठीक": "theek", "लिए": "liye",
+    # Chat Hinglish spelling overrides
+    "चाहिए": "chahiye", "चाहता": "chahta", "चाहती": "chahti", "चाहते": "chahte",
+    "थोड़ा": "thoda", "थोड़ी": "thodi", "थोड़े": "thode",
+    "पड़ा": "pada", "पड़ी": "padi", "पड़े": "pade", "पड़ेगा": "padega", "पड़ेगी": "padegi", "पड़ेंगे": "padenge",
+    "पड़ता": "padta", "पड़ती": "padti", "पड़ते": "padte",
+    "गाड़ी": "gaadi", "गाड़ियां": "gaadiyan", "गाड़ियों": "gaadiyon",
+    "लड़का": "ladka", "लड़की": "ladki", "लड़के": "ladke",
+    "बड़ा": "bada", "बड़ी": "badi", "बड़े": "bade",
+    "छोटा": "chhota", "छोटी": "chhoti", "छोटे": "chhote",
+    "छोड़": "chhod", "छोड़ो": "chhodo", "छोड़ना": "chhodna",
+    "पहले": "pehle", "पहला": "pehla", "पहली": "pehli",
+    "रहता": "rehta", "रहती": "rehti", "रहते": "rehte",
+    "कहता": "kehta", "कहती": "kehti", "कहते": "kehte",
+    "ज़्यादा": "zyada", "ज्यादा": "zyada", "ज़रूर": "zaroor", "जरूर": "zaroor",
+    "ज़िंदगी": "zindagi", "जिंदगी": "zindagi",
+    "ऊपर": "upar", "नीचे": "neeche", "अंदर": "andar", "बाहर": "bahar",
+    "पीछे": "peeche", "सामने": "saamne",
+    "दोस्त": "dost", "दोस्तों": "doston", "बंदे": "bande", "बंदा": "banda",
+    "लोग": "log", "लोगों": "logon", "बातें": "baatein", "बातों": "baaton",
+    "चीज": "cheez", "चीजें": "cheezein", "रास्ता": "raasta",
+    "होगा": "hoga", "होगी": "hogi", "होंगे": "honge",
+    "सकता": "sakta", "सकती": "sakti", "सकते": "sakte",
+    "करूंगा": "karunga", "करूंगी": "karungi", "करेंगे": "karenge",
+    "बताओ": "batao", "दिखाओ": "dikhao", "समझ": "samajh", "समझे": "samjhe",
+    # English loanwords (Tech, UI, Video, Social)
+    "स्क्रीन": "screen", "स्क्रीनशॉट": "screenshot", "बटन": "button",
+    "कमेंट": "comment", "कमेंट्स": "comments", "वीडियो": "video", "वीडियोज": "videos",
+    "सब्सक्राइब": "subscribe", "सब्सक्राइबर": "subscriber", "सब्सक्राइबर्स": "subscribers",
+    "लाइक": "like", "लाइक्स": "likes", "शेयर": "share", "फॉलो": "follow",
+    "चैनल": "channel", "लिंक": "link", "पोस्ट": "post", "अपडेट": "update",
+    "नोटिफिकेशन": "notification", "पॉपअप": "popup", "मैसेज": "message",
+    "चैट": "chat", "वॉइस": "voice", "ऑनलाइन": "online", "ऑफलाइन": "offline",
+    "डाउनलोड": "download", "अपलोड": "upload", "अकाउंट": "account", "प्रोफाइल": "profile",
+    "पासवर्ड": "password", "लॉगिन": "login", "लॉगआउट": "logout", "साइन": "sign",
+    "ऐप": "app", "वेबसाइट": "website", "इंटरनेट": "internet", "सर्च": "search",
+    "क्लिक": "click", "टैप": "tap", "डबल": "double", "स्क्रॉल": "scroll", "स्वाइप": "swipe",
+    "फोन": "phone", "फ़ोन": "phone", "यूट्यूब": "YouTube", "कंटेंट": "content",
+    "लोकेशन": "location", "एनिमेशन": "animation", "व्यू": "view",
+    # English loanwords (Gaming, Action, Creators)
+    "डैमेज": "damage", "एग्जिट": "exit", "फ्लाई": "fly", "ड्रिफ्ट": "drift", "ग्राउंड": "ground",
+    "एनिमी": "enemy", "एनिमीज": "enemies", "बुलेट": "bullet", "बुलेट्स": "bullets",
+    "डोज": "dodge", "फाइट": "fight", "गन": "gun", "गन्स": "guns", "किल": "kill", "किल्स": "kills",
+    "सेव": "save", "हेल्थ": "health", "हील": "heal", "हीलिंग": "healing", "व्हीकल": "vehicle",
+    "लॉबी": "lobby", "गेमिंग": "gaming", "गेमप्ले": "gameplay", "प्लेयर": "player", "प्लेयर्स": "players",
+    "ट्रिक": "trick", "ट्रिक्स": "tricks", "हैक": "hack", "हैक्स": "hacks", "फायर": "fire", "शूट": "shoot",
+    "हेडशॉट": "headshot", "बॉडीशॉट": "bodyshot", "नॉक": "knock", "रिवाइव": "revive", "रीलोड": "reload",
+    "स्कोप": "scope", "एम": "aim", "ड्रॉप": "drop", "एयरड्रॉप": "airdrop", "लूट": "loot",
+    "जोन": "zone", "सेफ": "safe", "रश": "rush", "कैंप": "camp", "कैंपर": "camper", "रैंक": "rank",
+    "पुश": "push", "टियर": "tier", "मैच": "match", "राउंड": "round", "टीम": "team", "स्क्वाड": "squad",
+    "सोलो": "solo", "डुओ": "duo", "सर्वर": "server", "पिंग": "ping", "लैग": "lag", "ग्लिच": "glitch",
+    "बग": "bug", "स्पॉन": "spawn", "टेलिपोर्ट": "teleport", "टेलीपोर्ट": "teleport",
+    "सुमन": "summon", "समन": "summon", "पेगासस": "pegasus", "हॉर्स": "horse",
+    "पावर": "power", "सुपर": "super", "अनलॉक": "unlock", "लेवल": "level", "मिशन": "mission",
+    "इवेंट": "event", "रिवॉर्ड": "reward", "स्किन": "skin", "इमोट": "emote", "कस्टम": "custom",
+    "मिथ्स": "myths", "मिथ": "myth", "केबिन": "cabin", "टावर": "tower", "फेदर": "feather",
+    "बूस्ट": "boost", "क्लासिक": "classic", "चेस्ट": "chest", "स्टोन": "stone", "ब्लिंक": "blink",
+    "हाइड": "hide", "हाइंड": "hide", "पंच": "punch", "मिली": "melee", "वेपन": "weapon",
+    "पैसिव": "passive", "स्किल": "skill", "स्किल्स": "skills", "सील": "seal", "एनर्जी": "energy",
+    "विंटर": "winter", "प्रोन": "prone", "स्लाइड": "slide", "हॉर्न": "horn", "मेडिकिट": "medkit",
+    "पावनिन": "Pownin", "अरोरा": "Aurora", "विकेंडी": "Vikendi", "इरेंगल": "Erangel", "लिविक": "Livik",
+    # Everyday loanwords
+    "लेफ्ट": "left", "राइट": "right", "अप": "up", "डाउन": "down",
+    "स्टार्ट": "start", "स्टॉप": "stop", "पॉज": "pause", "प्ले": "play", "नेक्स्ट": "next",
+    "बैक": "back", "फ्रंट": "front", "साइड": "side", "टॉप": "top", "बॉटम": "bottom", "सेंटर": "center",
+    "फुल": "full", "हाफ": "half", "टाइम": "time", "टाइम्स": "times", "सेकंड": "second", "सेकंड्स": "seconds",
+    "मिनट": "minute", "मिनट्स": "minutes", "घंटे": "hours", "फास्ट": "fast", "स्लो": "slow",
+    "इजी": "easy", "हार्ड": "hard", "सिंपल": "simple", "नॉर्मल": "normal", "परफेक्ट": "perfect",
+    "बेस्ट": "best", "गुड": "good", "बैड": "bad", "कूल": "cool", "नाइस": "nice", "अमेजिंग": "amazing",
+    "क्रेजी": "crazy", "लिटरली": "literally", "रियली": "really", "एक्चुअली": "actually",
+    "डेफिनेटली": "definitely", "बेसिकली": "basically", "फाइनली": "finally", "ऑब्वियसली": "obviously",
+    "प्रॉब्लम": "problem", "सॉल्यूशन": "solution", "आइडिया": "idea", "प्लान": "plan", "ऑप्शन": "option",
+    "सेटिंग": "setting", "सेटिंग्स": "settings", "फीचर": "feature", "फीचर्स": "features",
+    "सीक्रेट": "secret", "सीक्रेट्स": "secrets", "टिप्स": "tips", "टिप": "tip", "चेक": "check",
+    "टेस्ट": "test", "ट्राई": "try", "यूज": "use", "यूज़": "use", "युज": "use", "युज़": "use",
+    "हेल्प": "help", "सपोर्ट": "support", "वेट": "wait", "रेडी": "ready", "फिनिश": "finish",
+    "कम्प्लीट": "complete", "क्लियर": "clear", "डाउट": "doubt", "श्योर": "sure", "प्लीज": "please",
+    "थैंक्स": "thanks", "थैंक": "thank", "वेलकम": "welcome", "सॉरी": "sorry", "ओके": "okay",
+    "हे": "hey", "हेलो": "hello", "हाय": "hi", "बाय": "bye", "गाइज": "guys", "फ्रेंड्स": "friends",
+    "ब्रो": "bro", "सर": "sir", "बॉस": "boss", "पार्ट": "part", "नंबर": "number",
+    "फर्स्ट": "first", "लास्ट": "last", "न्यू": "new", "ओल्ड": "old", "ओपन": "open", "क्लोज": "close",
+    "हाउस": "house", "अपार्टमेंट": "apartment", "बिल्डिंग": "building", "रूम": "room",
+    "डोर": "door", "विंडो": "window", "वॉल": "wall", "रूफ": "roof", "एंट्रेंस": "entrance",
+    "स्टक": "stuck", "बैग": "bag", "कार": "car", "बाइक": "bike", "रोड": "road", "ब्रिज": "bridge",
+    "वाटर": "water", "कैमरा": "camera", "माइक": "mic", "साउंड": "sound", "म्यूजिक": "music",
+    "ऑडियो": "audio", "कलर": "color", "साइज": "size", "मनी": "money", "कैश": "cash",
+    "प्राइस": "price", "कॉस्ट": "cost", "फ्री": "free", "पे": "pe", "शॉप": "shop",
+    "मार्केट": "market", "अमेजॉन": "amazon", "गिफ्ट": "gift", "बॉक्स": "box", "पैक": "pack",
+    "इंस्टेंट": "instant", "ऐड": "add", "सेलेक्ट": "select", "एंड": "and", "ऑलरेडी": "already",
+    "जस्ट": "just", "बट": "but", "फन": "fun", "फूड": "food", "अदरवाइज": "otherwise", "इंफो": "info",
+    "इज": "is", "ऑफ": "of", "रीजन": "reason", "वाले": "wale", "वाला": "wala", "वाली": "wali",
+    "कुछ": "kuch", "सेम": "same", "देन": "then", "इसमें": "ismein", "वो": "woh", "वापस": "wapas",
+    "रैंडम": "random", "ऑल": "all", "इवन": "even", "डायरेक्ट": "direct", "थ्री": "three",
+    "नॉस्टैल्जिया": "nostalgia", "नोस्टेल्जिया": "nostalgia", "अराइविंग": "arriving", "हियर": "here",
+    "विद": "with", "नाउ": "now", "हायर": "hire", "गिव": "give", "मी": "me", "आइटम": "item",
+    "कैन्ड": "canned", "मल्टीपल": "multiple", "कम्प्लीटली": "completely", "टेक": "take",
+    "केयर": "care", "बाय-बाय": "bye-bye", "टाटा": "tata",
+}
+# Normalize both NFC and NFD keys so lookup never fails due to Unicode normalization forms.
+_WORDS = {}
+for _k, _v in _RAW_WORDS.items():
+    _WORDS[unicodedata.normalize("NFC", _k)] = _v
+    _WORDS[unicodedata.normalize("NFD", _k)] = _v
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 OTHER_SCRIPT = re.compile(r"[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]")   # Urdu / Arabic letters
 
@@ -87,8 +196,18 @@ def _korean(run: str) -> str:
 
 
 def _word(w: str) -> str:
+    w = unicodedata.normalize("NFC", w)
+    prefix, suffix = "", ""
+    while w and w[0] in ("।", "॥", ".", ",", "!", "?", "-", ":", ";"):
+        prefix += _OTHER.get(w[0], w[0])
+        w = w[1:]
+    while w and w[-1] in ("।", "॥", ".", ",", "!", "?", "-", ":", ";"):
+        suffix = _OTHER.get(w[-1], w[-1]) + suffix
+        w = w[:-1]
+    if not w:
+        return prefix + suffix
     if w in _WORDS:
-        return _WORDS[w]
+        return prefix + _WORDS[w] + suffix
     # One unit per letter: [roman consonant or vowel, its vowel or None (None = a consonant with no vowel), is_cons]
     units, i = [], 0
     while i < len(w):
@@ -142,7 +261,7 @@ def _word(w: str) -> str:
             after = letters[k + 1] if k + 1 < len(letters) else None
             if after is None or after[1]:
                 u[1] = short[u[1]]
-    return "".join(u[0] + (u[1] or "") for u in units)
+    return prefix + "".join(u[0] + (u[1] or "") for u in units) + suffix
 
 
 # ---------------------------------------------------------------- Urdu
