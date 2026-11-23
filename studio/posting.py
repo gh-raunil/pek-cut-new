@@ -66,8 +66,27 @@ def _mirror(p):
     job = jobs.get(p["job"])
     clip = next((c for c in job["clips"] if c["id"] == p["clip"]), None) if job else None
     if clip is not None:
-        clip.setdefault("posts", {})[p["id"]] = {k: p.get(k) for k in ("account_name", "platform", "status", "url", "due_at", "publish_at", "error")}
+        clip.setdefault("posts", {})[p["id"]] = {k: p.get(k) for k in ("account", "account_name", "platform", "status", "url", "due_at", "publish_at", "error")}
         jobs.save(job)
+
+
+def _backfill_clip_accounts():
+    try:
+        for p in _posts:
+            if not p.get("job") or not p.get("clip") or not p.get("account"):
+                continue
+            job = jobs.get(p["job"]) or getattr(jobs, "_jobs", {}).get(p["job"])
+            if not job:
+                continue
+            clip = next((c for c in job.get("clips", []) if c.get("id") == p["clip"]), None)
+            if clip and "posts" in clip and p["id"] in clip["posts"]:
+                if clip["posts"][p["id"]].get("account") != p["account"]:
+                    clip["posts"][p["id"]]["account"] = p["account"]
+                    jobs.save(job)
+    except Exception:
+        pass
+
+_backfill_clip_accounts()
 
 
 def _slots(times, start, days=400):
@@ -579,6 +598,7 @@ def digest_text() -> str:
 
 
 def start():
+    _backfill_clip_accounts()
     with _lock:
         for p in _posts:
             if p["status"] == "posting":  # interrupted mid-upload last time
